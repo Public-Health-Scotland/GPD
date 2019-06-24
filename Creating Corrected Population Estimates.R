@@ -25,7 +25,7 @@ library(readxl)
 
 base_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", "Referencing & Standards", "GPD", "2_Population", 
                            "Population Estimates")
-data_filepath <- file.path(base_filepath, "Source Data", "Corrected Estimates")
+data_filepath <- file.path(base_filepath, "Source Data", "Corrected Estimates 2018")
 output_filepath <- file.path(base_filepath, "Lookup Files", "R Files")
 
 ### 2 - Council Area ----
@@ -83,12 +83,9 @@ saveRDS(CA2019_pop_est_1981_2018, file.path(output_filepath, "CA2019_pop_est_198
 ### 2.2 - 5 Year Age Groups ----
 
 # Create a file for 5 year age groups and sex
-
-CA2019_pop_est_5year_agegroups_1981_2018 <- CA2019_pop_est_1981_2018
-
 # Assign a 5 year age group to each age
 
-CA2019_pop_est_5year_agegroups_1981_2018 <- CA2019_pop_est_5year_agegroups_1981_2018 %>%
+CA2019_pop_est_5year_agegroups_1981_2018 <- CA2019_pop_est_1981_2018 %>%
   mutate(AgeGroup = case_when(Age == 0 ~ 0, 
                               Age >= 1 & Age <= 4 ~ 1, 
                               Age >= 5 & Age <= 9 ~ 2, 
@@ -200,12 +197,9 @@ saveRDS(HB2019_pop_est_1981_2018, file.path(output_filepath, "HB2019_pop_est_198
 ### 3.2 - 5 Year Age Groups ----
 
 # Create a file for 5 year age groups and sex
-
-HB2019_pop_est_5year_agegroups_1981_2018 <- HB2019_pop_est_1981_2018
-
 # Assign a 5 year age group to each age
 
-HB2019_pop_est_5year_agegroups_1981_2018 <- HB2019_pop_est_5year_agegroups_1981_2018 %>%
+HB2019_pop_est_5year_agegroups_1981_2018 <- HB2019_pop_est_1981_2018 %>%
   mutate(AgeGroup = case_when(Age == 0 ~ 0, 
                               Age >= 1 & Age <= 4 ~ 1, 
                               Age >= 5 & Age <= 9 ~ 2, 
@@ -267,7 +261,7 @@ saveRDS(HB2019_pop_est_5year_agegroups_1981_2018, file.path(output_filepath, "HB
 # Create an HSCP2019Name column
 # Read in HSCP Locality lookup and take unique rows to get one row for each HSCP
 
-HSCP_Locality <- read_csv("//Isdsf00d03/cl-out/lookups/Unicode/Geography/HSCP Locality/HSCP Localities_DZ11_Lookup_20180903.csv") %>%
+HSCP_CA <- read_csv("//Isdsf00d03/cl-out/lookups/Unicode/Geography/HSCP Locality/HSCP Localities_DZ11_Lookup_20180903.csv") %>%
   select(HSCP2019Name, CA2019, CA2018, CA2011, HSCP2019, HSCP2018, HSCP2016) %>%
   distinct() %>%
   arrange(CA2019)
@@ -281,7 +275,7 @@ HSCP_Locality <- read_csv("//Isdsf00d03/cl-out/lookups/Unicode/Geography/HSCP Lo
 # Arrange by Year, HSCP2019, Age and Sex to get the required format
 
 HSCP2019_pop_est_1981_2018 <- CA2019_pop_est_1981_2018 %>%
-  full_join(HSCP_Locality) %>%
+  full_join(HSCP_CA) %>%
   select(Year, HSCP2019, HSCP2019Name, HSCP2018, HSCP2016, Age, Sex, SexName, Pop) %>%
   group_by(Year, HSCP2019, HSCP2019Name, HSCP2018, HSCP2016, Age, Sex, SexName) %>%
   summarise(Pop = sum(Pop)) %>%
@@ -303,7 +297,7 @@ saveRDS(HSCP2019_pop_est_1981_2018, file.path(output_filepath, "HSCP2019_pop_est
 # Arrange by Year, HSCP2019, Age and Sex to get the required format
 
 HSCP2019_pop_est_5year_agegroups_1981_2018 <- CA2019_pop_est_5year_agegroups_1981_2018 %>%
-  full_join(HSCP_Locality) %>%
+  full_join(HSCP_CA) %>%
   select(Year, HSCP2019, HSCP2019Name, HSCP2018, HSCP2016, AgeGroup, AgeGroupName, Sex, SexName, Pop) %>%
   group_by(Year, HSCP2019, HSCP2019Name, HSCP2018,  HSCP2016, AgeGroup, AgeGroupName, Sex, SexName) %>%
   summarise(Pop = sum(Pop)) %>%
