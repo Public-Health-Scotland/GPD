@@ -299,3 +299,6 @@ HSCP2019_pop_est_5year_agegroups_1981_2018 <- CA2019_pop_est_5year_agegroups_198
   summarise(Pop = sum(Pop)) %>%
   ungroup() %>%
   arrange(Year, HSCP2019, AgeGroup, Sex)
+
+
+
