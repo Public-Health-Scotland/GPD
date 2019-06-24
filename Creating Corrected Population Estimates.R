@@ -25,7 +25,7 @@ library(readxl)
 
 base_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", "Referencing & Standards", "GPD", "2_Population", 
                            "Population Estimates")
-data_filepath <- file.path(base_filepath, "Source Data", "Corrected Estimates")
+data_filepath <- file.path(base_filepath, "Source Data", "Corrected Estimates 2018")
 output_filepath <- file.path(base_filepath, "Lookup Files", "R Files")
 
 ### 2 - Council Area ----
@@ -69,7 +69,7 @@ CA2019_pop_est_1981_2018 <- combined_data %>%
 # Add in GSS codes
 # Take these from the current populatione estimates
 
-CA2019_current_est <- readRDS(file.path(output_filepath, "CA2019_pop_est_1981_2018.rds")) %>% 
+CA2019_current_est <- readRDS(file.path(output_filepath, "Archive", "CA2019_pop_est_1981_2018.rds")) %>% 
   select(CA2019Name, CA2019, CA2018, CA2011) %>% 
   distinct()
 
@@ -78,17 +78,14 @@ CA2019_pop_est_1981_2018 <- CA2019_pop_est_1981_2018 %>%
   select(Year, CA2019, CA2019Name, CA2018, CA2011, Age, Sex, SexName, Pop) %>% 
   arrange(Year, CA2019, Age, Sex)
 
-
+saveRDS(CA2019_pop_est_1981_2018, file.path(output_filepath, "CA2019_pop_est_1981_2018.rds"))
 
 ### 2.2 - 5 Year Age Groups ----
 
 # Create a file for 5 year age groups and sex
-
-CA2019_pop_est_5year_agegroups_1981_2018 <- CA2019_pop_est_1981_2018
-
 # Assign a 5 year age group to each age
 
-CA2019_pop_est_5year_agegroups_1981_2018 <- CA2019_pop_est_5year_agegroups_1981_2018 %>%
+CA2019_pop_est_5year_agegroups_1981_2018 <- CA2019_pop_est_1981_2018 %>%
   mutate(AgeGroup = case_when(Age == 0 ~ 0, 
                               Age >= 1 & Age <= 4 ~ 1, 
                               Age >= 5 & Age <= 9 ~ 2, 
@@ -139,6 +136,8 @@ CA2019_pop_est_5year_agegroups_1981_2018 <- CA2019_pop_est_5year_agegroups_1981_
   ungroup() %>%
   select(Year, CA2019, CA2019Name, CA2018, CA2011, AgeGroup, AgeGroupName, Sex, SexName, Pop)
 
+saveRDS(CA2019_pop_est_5year_agegroups_1981_2018, file.path(output_filepath, "CA2019_pop_est_5year_agegroups_1981_2018.rds"))
+
 
 
 ### 3 - Health Board ----
@@ -182,7 +181,7 @@ HB2019_pop_est_1981_2018 <- combined_data %>%
 # Add in GSS codes
 # Take these from the current populatione estimates
 
-HB2019_current_est <- readRDS(file.path(output_filepath, "HB2019_pop_est_1981_2018.rds")) %>% 
+HB2019_current_est <- readRDS(file.path(output_filepath, "Archive", "HB2019_pop_est_1981_2018.rds")) %>% 
   select(HB2019Name, HB2019, HB2018, HB2014) %>% 
   distinct()
 
@@ -191,17 +190,16 @@ HB2019_pop_est_1981_2018 <- HB2019_pop_est_1981_2018 %>%
   select(Year, HB2019, HB2019Name, HB2018, HB2014, Age, Sex, SexName, Pop) %>% 
   arrange(Year, HB2019, Age, Sex)
 
+saveRDS(HB2019_pop_est_1981_2018, file.path(output_filepath, "HB2019_pop_est_1981_2018.rds"))
+
 
 
 ### 3.2 - 5 Year Age Groups ----
 
 # Create a file for 5 year age groups and sex
-
-HB2019_pop_est_5year_agegroups_1981_2018 <- HB2019_pop_est_1981_2018
-
 # Assign a 5 year age group to each age
 
-HB2019_pop_est_5year_agegroups_1981_2018 <- HB2019_pop_est_5year_agegroups_1981_2018 %>%
+HB2019_pop_est_5year_agegroups_1981_2018 <- HB2019_pop_est_1981_2018 %>%
   mutate(AgeGroup = case_when(Age == 0 ~ 0, 
                               Age >= 1 & Age <= 4 ~ 1, 
                               Age >= 5 & Age <= 9 ~ 2, 
@@ -252,6 +250,8 @@ HB2019_pop_est_5year_agegroups_1981_2018 <- HB2019_pop_est_5year_agegroups_1981_
   ungroup() %>%
   select(Year, HB2019, HB2019Name, HB2018, HB2014, AgeGroup, AgeGroupName, Sex, SexName, Pop)
 
+saveRDS(HB2019_pop_est_5year_agegroups_1981_2018, file.path(output_filepath, "HB2019_pop_est_5year_agegroups_1981_2018.rds"))
+
 
 
 ### 4 - HSCP ----
@@ -261,7 +261,7 @@ HB2019_pop_est_5year_agegroups_1981_2018 <- HB2019_pop_est_5year_agegroups_1981_
 # Create an HSCP2019Name column
 # Read in HSCP Locality lookup and take unique rows to get one row for each HSCP
 
-HSCP_Locality <- read_csv("//Isdsf00d03/cl-out/lookups/Unicode/Geography/HSCP Locality/HSCP Localities_DZ11_Lookup_20180903.csv") %>%
+HSCP_CA <- read_csv("//Isdsf00d03/cl-out/lookups/Unicode/Geography/HSCP Locality/HSCP Localities_DZ11_Lookup_20180903.csv") %>%
   select(HSCP2019Name, CA2019, CA2018, CA2011, HSCP2019, HSCP2018, HSCP2016) %>%
   distinct() %>%
   arrange(CA2019)
@@ -275,12 +275,16 @@ HSCP_Locality <- read_csv("//Isdsf00d03/cl-out/lookups/Unicode/Geography/HSCP Lo
 # Arrange by Year, HSCP2019, Age and Sex to get the required format
 
 HSCP2019_pop_est_1981_2018 <- CA2019_pop_est_1981_2018 %>%
-  full_join(HSCP_Locality) %>%
+  full_join(HSCP_CA) %>%
   select(Year, HSCP2019, HSCP2019Name, HSCP2018, HSCP2016, Age, Sex, SexName, Pop) %>%
   group_by(Year, HSCP2019, HSCP2019Name, HSCP2018, HSCP2016, Age, Sex, SexName) %>%
   summarise(Pop = sum(Pop)) %>%
   ungroup() %>%
   arrange(Year, HSCP2019, Age, Sex)
+
+saveRDS(HSCP2019_pop_est_1981_2018, file.path(output_filepath, "HSCP2019_pop_est_1981_2018.rds"))
+
+
 
 ### 4.2 - Five Year Age Groups ----
 
@@ -293,12 +297,82 @@ HSCP2019_pop_est_1981_2018 <- CA2019_pop_est_1981_2018 %>%
 # Arrange by Year, HSCP2019, Age and Sex to get the required format
 
 HSCP2019_pop_est_5year_agegroups_1981_2018 <- CA2019_pop_est_5year_agegroups_1981_2018 %>%
-  full_join(HSCP_Locality) %>%
+  full_join(HSCP_CA) %>%
   select(Year, HSCP2019, HSCP2019Name, HSCP2018, HSCP2016, AgeGroup, AgeGroupName, Sex, SexName, Pop) %>%
   group_by(Year, HSCP2019, HSCP2019Name, HSCP2018,  HSCP2016, AgeGroup, AgeGroupName, Sex, SexName) %>%
   summarise(Pop = sum(Pop)) %>%
   ungroup() %>%
   arrange(Year, HSCP2019, AgeGroup, Sex)
 
+saveRDS(HSCP2019_pop_est_5year_agegroups_1981_2018, file.path(output_filepath, "HSCP2019_pop_est_5year_agegroups_1981_2018.rds"))
 
 
+
+### 5 - Comparing Adjustments with NRS ----
+
+# NRS documentation shows the corrected population adjustment rounded to the nearest 10
+# https://www.nrscotland.gov.uk/files//statistics/population-estimates/mid-year-corrections/correction-to-age-distribution-mid-year%20pop-estimates-2002-2010.pdf
+
+# Compare this files with the adjusted populations created with this code
+
+### 5.1 - Check Council Area Asjustments ----
+
+# Read in old CA2019_pop_est_1981_2018 file
+old_CA2019_pop_est_1981_2018 <- readRDS(file.path(output_filepath, "Archive", "CA2019_pop_est_1981_2018.rds"))
+
+old_CA2019_CA <- old_CA2019_pop_est_1981_2018 %>% 
+  rename(Pop_2 = Pop) %>% 
+  filter(Age >= 90) %>% 
+  filter(Year >= 2002 & Year <= 2010) %>% 
+  group_by(CA2019Name, Year) %>% 
+  summarise(Pop_2 = sum(Pop_2)) %>% 
+  arrange(CA2019Name) %>% 
+  ungroup()
+
+# Manipulate the new CA2019_pop_est_1981_2018 file
+
+CA_compare <- CA2019_pop_est_1981_2018 %>% 
+  filter(Age >= 90) %>% 
+  filter(Year >= 2002 & Year <= 2010) %>% 
+  group_by(CA2019Name, Year) %>% 
+  summarise(Pop = sum(Pop)) %>% 
+  arrange(CA2019Name) %>% 
+  ungroup()
+
+# Compare these two files and look at the difference in population
+
+compare <- CA_compare %>% 
+  left_join(old_CA2019_CA) %>% 
+  mutate(diff = Pop - Pop_2) %>% 
+  select(CA2019Name, Year, diff) %>% 
+  spread(Year, diff)
+
+### Check Scotland level adjustments ----
+
+# Select the Scotland level populations for ages 80+ for 2002-2010 from corrected estimates
+
+total_pop <- CA2019_pop_est_1981_2018 %>% 
+  filter(Age >= 80) %>% 
+  filter(Year >= 2002 & Year <= 2010) %>% 
+  group_by(Age, Year) %>% 
+  summarise(Pop = sum(Pop)) %>% 
+  ungroup()
+
+# Select the Scotland level populations for ages 80+ for 2002-2010 from old estimates
+
+old_total_pop <- old_CA2019_pop_est_1981_2018 %>% 
+  filter(Age >= 80) %>% 
+  filter(Year >= 2002 & Year <= 2010) %>% 
+  group_by(Age, Year) %>% 
+  summarise(Pop = sum(Pop)) %>% 
+  ungroup() %>% 
+  rename(Pop_2 = Pop)
+
+# Compare these files to determine the difference in population by age and year
+# Compare this with NRS documentation
+
+compare_total_pop <- total_pop %>% 
+  left_join(old_total_pop) %>% 
+  mutate(diff = Pop - Pop_2) %>% 
+  select(Age, Year, diff) %>% 
+  spread(Age, diff)
