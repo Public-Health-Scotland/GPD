@@ -69,7 +69,7 @@ CA2019_pop_est_1981_2018 <- combined_data %>%
 # Add in GSS codes
 # Take these from the current populatione estimates
 
-CA2019_current_est <- readRDS(file.path(output_filepath, "CA2019_pop_est_1981_2018.rds")) %>% 
+CA2019_current_est <- readRDS(file.path(output_filepath, "Archive", "CA2019_pop_est_1981_2018.rds")) %>% 
   select(CA2019Name, CA2019, CA2018, CA2011) %>% 
   distinct()
 
@@ -78,7 +78,7 @@ CA2019_pop_est_1981_2018 <- CA2019_pop_est_1981_2018 %>%
   select(Year, CA2019, CA2019Name, CA2018, CA2011, Age, Sex, SexName, Pop) %>% 
   arrange(Year, CA2019, Age, Sex)
 
-
+saveRDS(CA2019_pop_est_1981_2018, file.path(output_filepath, "CA2019_pop_est_1981_2018.rds"))
 
 ### 2.2 - 5 Year Age Groups ----
 
@@ -139,6 +139,8 @@ CA2019_pop_est_5year_agegroups_1981_2018 <- CA2019_pop_est_5year_agegroups_1981_
   ungroup() %>%
   select(Year, CA2019, CA2019Name, CA2018, CA2011, AgeGroup, AgeGroupName, Sex, SexName, Pop)
 
+saveRDS(CA2019_pop_est_5year_agegroups_1981_2018, file.path(output_filepath, "CA2019_pop_est_5year_agegroups_1981_2018.rds"))
+
 
 
 ### 3 - Health Board ----
@@ -182,7 +184,7 @@ HB2019_pop_est_1981_2018 <- combined_data %>%
 # Add in GSS codes
 # Take these from the current populatione estimates
 
-HB2019_current_est <- readRDS(file.path(output_filepath, "HB2019_pop_est_1981_2018.rds")) %>% 
+HB2019_current_est <- readRDS(file.path(output_filepath, "Archive", "HB2019_pop_est_1981_2018.rds")) %>% 
   select(HB2019Name, HB2019, HB2018, HB2014) %>% 
   distinct()
 
@@ -190,6 +192,8 @@ HB2019_pop_est_1981_2018 <- HB2019_pop_est_1981_2018 %>%
   left_join(HB2019_current_est) %>% 
   select(Year, HB2019, HB2019Name, HB2018, HB2014, Age, Sex, SexName, Pop) %>% 
   arrange(Year, HB2019, Age, Sex)
+
+saveRDS(HB2019_pop_est_1981_2018, file.path(output_filepath, "HB2019_pop_est_1981_2018.rds"))
 
 
 
@@ -252,6 +256,8 @@ HB2019_pop_est_5year_agegroups_1981_2018 <- HB2019_pop_est_5year_agegroups_1981_
   ungroup() %>%
   select(Year, HB2019, HB2019Name, HB2018, HB2014, AgeGroup, AgeGroupName, Sex, SexName, Pop)
 
+saveRDS(HB2019_pop_est_5year_agegroups_1981_2018, file.path(output_filepath, "HB2019_pop_est_5year_agegroups_1981_2018.rds"))
+
 
 
 ### 4 - HSCP ----
@@ -282,6 +288,10 @@ HSCP2019_pop_est_1981_2018 <- CA2019_pop_est_1981_2018 %>%
   ungroup() %>%
   arrange(Year, HSCP2019, Age, Sex)
 
+saveRDS(HSCP2019_pop_est_1981_2018, file.path(output_filepath, "HSCP2019_pop_est_1981_2018.rds"))
+
+
+
 ### 4.2 - Five Year Age Groups ----
 
 # Match the HSCP columns onto the CA2019 lookup
@@ -300,5 +310,75 @@ HSCP2019_pop_est_5year_agegroups_1981_2018 <- CA2019_pop_est_5year_agegroups_198
   ungroup() %>%
   arrange(Year, HSCP2019, AgeGroup, Sex)
 
+saveRDS(HSCP2019_pop_est_5year_agegroups_1981_2018, file.path(output_filepath, "HSCP2019_pop_est_5year_agegroups_1981_2018.rds"))
 
 
+
+### 5 - Comparing Adjustments with NRS ----
+
+# NRS documentation shows the corrected population adjustment rounded to the nearest 10
+# https://www.nrscotland.gov.uk/files//statistics/population-estimates/mid-year-corrections/correction-to-age-distribution-mid-year%20pop-estimates-2002-2010.pdf
+
+# Compare this files with the adjusted populations created with this code
+
+### 5.1 - Check Council Area Asjustments ----
+
+# Read in old CA2019_pop_est_1981_2018 file
+old_CA2019_pop_est_1981_2018 <- readRDS(file.path(output_filepath, "Archive", "CA2019_pop_est_1981_2018.rds"))
+
+old_CA2019_CA <- old_CA2019_pop_est_1981_2018 %>% 
+  rename(Pop_2 = Pop) %>% 
+  filter(Age >= 90) %>% 
+  filter(Year >= 2002 & Year <= 2010) %>% 
+  group_by(CA2019Name, Year) %>% 
+  summarise(Pop_2 = sum(Pop_2)) %>% 
+  arrange(CA2019Name) %>% 
+  ungroup()
+
+# Manipulate the new CA2019_pop_est_1981_2018 file
+
+CA_compare <- CA2019_pop_est_1981_2018 %>% 
+  filter(Age >= 90) %>% 
+  filter(Year >= 2002 & Year <= 2010) %>% 
+  group_by(CA2019Name, Year) %>% 
+  summarise(Pop = sum(Pop)) %>% 
+  arrange(CA2019Name) %>% 
+  ungroup()
+
+# Compare these two files and look at the difference in population
+
+compare <- CA_compare %>% 
+  left_join(old_CA2019_CA) %>% 
+  mutate(diff = Pop - Pop_2) %>% 
+  select(CA2019Name, Year, diff) %>% 
+  spread(Year, diff)
+
+### Check Scotland level adjustments ----
+
+# Select the Scotland level populations for ages 80+ for 2002-2010 from corrected estimates
+
+total_pop <- CA2019_pop_est_1981_2018 %>% 
+  filter(Age >= 80) %>% 
+  filter(Year >= 2002 & Year <= 2010) %>% 
+  group_by(Age, Year) %>% 
+  summarise(Pop = sum(Pop)) %>% 
+  ungroup()
+
+# Select the Scotland level populations for ages 80+ for 2002-2010 from old estimates
+
+old_total_pop <- old_CA2019_pop_est_1981_2018 %>% 
+  filter(Age >= 80) %>% 
+  filter(Year >= 2002 & Year <= 2010) %>% 
+  group_by(Age, Year) %>% 
+  summarise(Pop = sum(Pop)) %>% 
+  ungroup() %>% 
+  rename(Pop_2 = Pop)
+
+# Compare these files to determine the difference in population by age and year
+# Compare this with NRS documentation
+
+compare_total_pop <- total_pop %>% 
+  left_join(old_total_pop) %>% 
+  mutate(diff = Pop - Pop_2) %>% 
+  select(Age, Year, diff) %>% 
+  spread(Age, diff)
