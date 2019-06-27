@@ -22,11 +22,15 @@ library(dplyr)
 library(tidyr)
 library(readr)
 library(readxl)
+library(haven)
+library(sjlabelled)
 
 base_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", "Referencing & Standards", "GPD", "2_Population", 
                            "Population Estimates")
 data_filepath <- file.path(base_filepath, "Source Data", "Corrected Estimates 2018")
-output_filepath <- file.path(base_filepath, "Lookup Files", "R Files")
+SPSS_filepath <- file.path(base_filepath, "Lookup Files")
+output_filepath <- file.path(SPSS_filepath, "R Files")
+
 
 ### 2 - Council Area ----
 
@@ -347,7 +351,7 @@ compare <- CA_compare %>%
   select(CA2019Name, Year, diff) %>% 
   spread(Year, diff)
 
-### Check Scotland level adjustments ----
+### 5.2 - Check Scotland level adjustments ----
 
 # Select the Scotland level populations for ages 80+ for 2002-2010 from corrected estimates
 
@@ -376,3 +380,64 @@ compare_total_pop <- total_pop %>%
   mutate(diff = Pop - Pop_2) %>% 
   select(Age, Year, diff) %>% 
   spread(Age, diff)
+
+
+
+### 6 - Compare R and SPSS outputs ----
+
+
+columns <- c("Year", "geo1", "geo2", "geo3", "Age_check", "Sex", "Pop")
+
+compare_SPSS_R <- function(SPSS_data, R_data, geo1, geo2, geo3, Age_check){
+  
+  # Read in SPSS file
+  # Remove variable labels, formats and widths from SPSS
+  # Haven reads in SPSS strings as factors
+  # Convert all factors to characters in the SPSS file
+  
+  SPSS <- read_sav(file.path(SPSS_filepath, SPSS_data), user_na=F) %>%
+    zap_formats() %>%
+    zap_widths() %>%
+    remove_all_labels() %>% 
+    mutate_if(is.factor, as.character) %>% 
+    mutate(Year = as.character(Year))
+  
+  # Read in R file and sort by pc7
+  
+  R <- readRDS(file.path(output_filepath, R_data)) %>% 
+    select_(., .dots = columns)
+  
+  
+  # Compare datasets
+  all_equal(SPSS, R)
+  
+}
+
+### 6.1 - Council Area ----
+
+# CA2019_pop_est_1981_2018
+compare_SPSS_R("CA2019_pop_est_1981_2018.sav", "CA2019_pop_est_1981_2018.rds", "CA2019", "CA2018", "CA2011", "Age")
+
+# CA2019_pop_est_5year_agegroups_1981_2018
+compare_SPSS_R("CA2019_pop_est_5year_agegroups_1981_2018.sav", "CA2019_pop_est_5year_agegroups_1981_2018.rds", "CA2019", "CA2018", "CA2011", "AgeGroup")
+
+
+
+### 6.2 - Health Board ----
+
+# HB2019_pop_est_1981_2018
+compare_SPSS_R("HB2019_pop_est_1981_2018.sav", "HB2019_pop_est_1981_2018.rds", "HB2019", "HB2018", "HB2014", "Age")
+
+# HB2019_pop_est_1981_2018
+compare_SPSS_R("HB2019_pop_est_5year_agegroups_1981_2018.sav", "HB2019_pop_est_5year_agegroups_1981_2018.rds", "HB2019", "HB2018", "HB2014", "AgeGroup")
+
+
+
+### 6.3 - HSCP ----
+
+# HSCP2019_pop_est_1981_2018
+compare_SPSS_R("HSCP2019_pop_est_1981_2018.sav", "HSCP2019_pop_est_1981_2018.rds", "HSCP2019", "HSCP2018", "HSCP2016", "Age")
+
+# HSCP2019_pop_est_1981_2018
+compare_SPSS_R("HSCP2019_pop_est_5year_agegroups_1981_2018.sav", "HSCP2019_pop_est_5year_agegroups_1981_2018.rds", "HSCP2019", "HSCP2018", "HSCP2016", "AgeGroup")
+
