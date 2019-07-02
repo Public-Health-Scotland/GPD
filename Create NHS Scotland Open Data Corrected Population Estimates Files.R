@@ -26,6 +26,8 @@ data_filepath <- file.path(base_filepath, "Referencing & Standards", "GPD", "2_P
                            "Population Estimates", "Lookup Files", "R Files")
 open_data_filepath <- file.path(base_filepath, "Publications", "Open Data (Non Health Topic)", "Data", 
                                 "OD1700007 - Population Estimates")
+HB2006_filepath <- file.path(base_filepath, "Referencing & Standards", "GPD", "1_Geography", 
+                             "Scottish Postcode Directory", "Lookup Files", "R Files")
 
 
 
@@ -168,3 +170,20 @@ HSCP2016_pop_est_1981_2018 <- HSCP2016_pop_est_1981_2018 %>%
 # Change date to date the file is saved
 write_csv(HSCP2016_pop_est_1981_2018, file.path(open_data_filepath, "HSCP2016_pop_est_01072019.csv"), na = "")
 
+
+
+### 7 - Update HB2006 Files ----
+
+# Read in HB2019 estimates
+HB2006_pop_est <- geo_pop(file.path(data_filepath, "HB2006_pop_est_1981_2013.rds"), "HB2006")
+
+# Attach Scotland national code
+HB2006_pop_est$HB2006[is.na(HB2006_pop_est$HB2006)] <- 'S92000003'
+
+# Reorder columns
+HB2006_pop_est <- HB2006_pop_est %>%
+  select(Year, HB2006, Sex, AllAges, Age0:Age90plus)
+
+# Write as csv
+# Change date to date the file is saved
+write_csv(HB2006_pop_est, file.path(open_data_filepath, "HB2006_pop_est_02072019.csv"), na = "")

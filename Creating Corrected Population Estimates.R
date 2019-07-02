@@ -262,6 +262,67 @@ saveRDS(HB2019_pop_est_5year_agegroups_1981_2018, file.path(output_filepath, "HB
 
 
 
+### 3.3 - Create HB2006 Single Year File ----
+
+# Use a loop to read in all 38 sheets
+# I tried to create a function for this so that it would work for Council Area and Health Board but can't get it working
+
+for (i in as.character(1981:2013)) {
+  
+  male <- read_excel(file.path(data_filepath, "hbe8113-pre-14-nhs-board-areas-revised.xlsx"), sheet = i, range = "A21:CO36") %>% 
+    select(-`All Ages`) %>% 
+    filter(!is.na(Males), Males != "Scotland") %>%
+    rename(HB2006 = Males) %>% 
+    mutate(Sex = 1, Year = i) %>% 
+    mutate(Year = as.numeric(Year))
+  
+  female <- read_excel(file.path(data_filepath, "hbe8113-pre-14-nhs-board-areas-revised.xlsx"), sheet = i, range = "A39:CO54") %>% 
+    select(-`All Ages`) %>% 
+    filter(!is.na(Females), Females != "Scotland") %>% 
+    rename(HB2006 = Females) %>% 
+    mutate(Sex = 2, Year = i) %>% 
+    mutate(Year = as.numeric(Year))
+  
+  if (i == 1981) {
+    combined_data <- bind_rows(male, female)
+  } else {
+    data_next_year <- bind_rows(male, female)
+    combined_data <- bind_rows(combined_data, data_next_year) %>% 
+      mutate(SexName = recode(Sex, '1' = 'M', '2' = 'F'))
+  }
+  
+}
+
+# Manipulate date into the correct format
+# Recode HB2006 by adding in GSS Codes
+
+HB2006_pop_est_1981_2013 <- combined_data %>% 
+  gather(Age, Pop, "0":"90+") %>% 
+  mutate(Age = ifelse(Age == "90+", "90", Age), 
+         Age = as.numeric(Age), 
+         HB2006 = recode(HB2006, 
+                         "Ayrshire & Arran" = "S08000001", 
+                         "Borders" = "S08000002", 
+                         "Dumfries & Galloway" = "S08000003", 
+                         "Fife" = "S08000004", 
+                         "Forth Valley" = "S08000005", 
+                         "Grampian" = "S08000006", 
+                         "Greater Glasgow" = "S08000007", 
+                         "Greater Glasgow & Clyde" = "S08000007", 
+                         "Highland" = "S08000008", 
+                         "Lanarkshire" = "S08000009", 
+                         "Lothian" = "S08000010", 
+                         "Orkney" = "S08000011", 
+                         "Shetland" = "S08000012", 
+                         "Tayside" = "S08000013", 
+                         "Western Isles" = "S08000014")) %>% 
+  select(Year, HB2006, Age, Sex, SexName, Pop) %>% 
+  arrange(Year, HB2006, Age, Sex)
+
+saveRDS(HB2006_pop_est_1981_2013, file.path(output_filepath, "HB2006_pop_est_1981_2013.rds"))
+
+
+
 ### 4 - HSCP ----
 
 ### 4.1 - Single Year Age Groups ----
