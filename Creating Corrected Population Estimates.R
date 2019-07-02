@@ -45,13 +45,15 @@ for (i in as.character(1981:2018)) {
     select(-`All Ages`) %>% 
     filter(!is.na(Males), Males != "Scotland") %>%
     rename(CA2019Name = Males) %>% 
-    mutate(Sex = 1, Year = i)
+    mutate(Sex = 1, Year = i) %>% 
+    mutate(Year = as.numeric(Year))
   
   female <- read_excel(file.path(data_filepath, "mid-year-pop-est-18-time-series-1.xlsx"), sheet = i, range = "B77:CP111") %>% 
     select(-`All Ages`) %>% 
     filter(!is.na(Females), Females != "Scotland") %>% 
     rename(CA2019Name = Females) %>% 
-    mutate(Sex = 2, Year = i)
+    mutate(Sex = 2, Year = i) %>% 
+    mutate(Year = as.numeric(Year))
   
   if (i == 1981) {
     combined_data <- bind_rows(male, female)
@@ -157,13 +159,15 @@ for (i in as.character(1981:2018)) {
     select(-`All Ages`) %>% 
     filter(!is.na(Males), Males != "Scotland") %>%
     rename(HB2019Name = Males) %>% 
-    mutate(Sex = 1, Year = i)
+    mutate(Sex = 1, Year = i) %>% 
+    mutate(Year = as.numeric(Year))
   
   female <- read_excel(file.path(data_filepath, "mid-year-pop-est-18-time-series-3.xlsx"), sheet = i, range = "B41:CP57") %>% 
     select(-`All Ages`) %>% 
     filter(!is.na(Females), Females != "Scotland") %>% 
     rename(HB2019Name = Females) %>% 
-    mutate(Sex = 2, Year = i)
+    mutate(Sex = 2, Year = i) %>% 
+    mutate(Year = as.numeric(Year))
   
   if (i == 1981) {
     combined_data <- bind_rows(male, female)
@@ -327,7 +331,8 @@ old_CA2019_pop_est_1981_2018 <- readRDS(file.path(output_filepath, "Archive", "C
 old_CA2019_CA <- old_CA2019_pop_est_1981_2018 %>% 
   rename(Pop_2 = Pop) %>% 
   filter(Age >= 90) %>% 
-  filter(Year >= 2002 & Year <= 2010) %>% 
+  filter(Year >= 2002 & Year <= 2010) %>%
+  mutate(Year = as.numeric(Year)) %>% 
   group_by(CA2019Name, Year) %>% 
   summarise(Pop_2 = sum(Pop_2)) %>% 
   arrange(CA2019Name) %>% 
@@ -367,6 +372,7 @@ total_pop <- CA2019_pop_est_1981_2018 %>%
 old_total_pop <- old_CA2019_pop_est_1981_2018 %>% 
   filter(Age >= 80) %>% 
   filter(Year >= 2002 & Year <= 2010) %>% 
+  mutate(Year = as.numeric(Year)) %>% 
   group_by(Age, Year) %>% 
   summarise(Pop = sum(Pop)) %>% 
   ungroup() %>% 
@@ -399,8 +405,7 @@ compare_SPSS_R <- function(SPSS_data, R_data, geo1, geo2, geo3, Age_check){
     zap_formats() %>%
     zap_widths() %>%
     remove_all_labels() %>% 
-    mutate_if(is.factor, as.character) %>% 
-    mutate(Year = as.character(Year))
+    mutate_if(is.factor, as.character)
   
   # Read in R file and sort by pc7
   
