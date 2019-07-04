@@ -22,11 +22,15 @@ library(dplyr)
 library(tidyr)
 library(readr)
 library(readxl)
+library(haven)
+library(sjlabelled)
 
 base_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", "Referencing & Standards", "GPD", "2_Population", 
                            "Population Estimates")
 data_filepath <- file.path(base_filepath, "Source Data", "Corrected Estimates 2018")
-output_filepath <- file.path(base_filepath, "Lookup Files", "R Files")
+SPSS_filepath <- file.path(base_filepath, "Lookup Files")
+output_filepath <- file.path(SPSS_filepath, "R Files")
+
 
 ### 2 - Council Area ----
 
@@ -41,13 +45,15 @@ for (i in as.character(1981:2018)) {
     select(-`All Ages`) %>% 
     filter(!is.na(Males), Males != "Scotland") %>%
     rename(CA2019Name = Males) %>% 
-    mutate(Sex = 1, Year = i)
+    mutate(Sex = 1, Year = i) %>% 
+    mutate(Year = as.numeric(Year))
   
   female <- read_excel(file.path(data_filepath, "mid-year-pop-est-18-time-series-1.xlsx"), sheet = i, range = "B77:CP111") %>% 
     select(-`All Ages`) %>% 
     filter(!is.na(Females), Females != "Scotland") %>% 
     rename(CA2019Name = Females) %>% 
-    mutate(Sex = 2, Year = i)
+    mutate(Sex = 2, Year = i) %>% 
+    mutate(Year = as.numeric(Year))
   
   if (i == 1981) {
     combined_data <- bind_rows(male, female)
@@ -153,13 +159,15 @@ for (i in as.character(1981:2018)) {
     select(-`All Ages`) %>% 
     filter(!is.na(Males), Males != "Scotland") %>%
     rename(HB2019Name = Males) %>% 
-    mutate(Sex = 1, Year = i)
+    mutate(Sex = 1, Year = i) %>% 
+    mutate(Year = as.numeric(Year))
   
   female <- read_excel(file.path(data_filepath, "mid-year-pop-est-18-time-series-3.xlsx"), sheet = i, range = "B41:CP57") %>% 
     select(-`All Ages`) %>% 
     filter(!is.na(Females), Females != "Scotland") %>% 
     rename(HB2019Name = Females) %>% 
-    mutate(Sex = 2, Year = i)
+    mutate(Sex = 2, Year = i) %>% 
+    mutate(Year = as.numeric(Year))
   
   if (i == 1981) {
     combined_data <- bind_rows(male, female)
@@ -254,6 +262,67 @@ saveRDS(HB2019_pop_est_5year_agegroups_1981_2018, file.path(output_filepath, "HB
 
 
 
+### 3.3 - Create HB2006 Single Year File ----
+
+# Use a loop to read in all 38 sheets
+# I tried to create a function for this so that it would work for Council Area and Health Board but can't get it working
+
+for (i in as.character(1981:2013)) {
+  
+  male <- read_excel(file.path(data_filepath, "hbe8113-pre-14-nhs-board-areas-revised.xlsx"), sheet = i, range = "A21:CO36") %>% 
+    select(-`All Ages`) %>% 
+    filter(!is.na(Males), Males != "Scotland") %>%
+    rename(HB2006 = Males) %>% 
+    mutate(Sex = 1, Year = i) %>% 
+    mutate(Year = as.numeric(Year))
+  
+  female <- read_excel(file.path(data_filepath, "hbe8113-pre-14-nhs-board-areas-revised.xlsx"), sheet = i, range = "A39:CO54") %>% 
+    select(-`All Ages`) %>% 
+    filter(!is.na(Females), Females != "Scotland") %>% 
+    rename(HB2006 = Females) %>% 
+    mutate(Sex = 2, Year = i) %>% 
+    mutate(Year = as.numeric(Year))
+  
+  if (i == 1981) {
+    combined_data <- bind_rows(male, female)
+  } else {
+    data_next_year <- bind_rows(male, female)
+    combined_data <- bind_rows(combined_data, data_next_year) %>% 
+      mutate(SexName = recode(Sex, '1' = 'M', '2' = 'F'))
+  }
+  
+}
+
+# Manipulate date into the correct format
+# Recode HB2006 by adding in GSS Codes
+
+HB2006_pop_est_1981_2013 <- combined_data %>% 
+  gather(Age, Pop, "0":"90+") %>% 
+  mutate(Age = ifelse(Age == "90+", "90", Age), 
+         Age = as.numeric(Age), 
+         HB2006 = recode(HB2006, 
+                         "Ayrshire & Arran" = "S08000001", 
+                         "Borders" = "S08000002", 
+                         "Dumfries & Galloway" = "S08000003", 
+                         "Fife" = "S08000004", 
+                         "Forth Valley" = "S08000005", 
+                         "Grampian" = "S08000006", 
+                         "Greater Glasgow" = "S08000007", 
+                         "Greater Glasgow & Clyde" = "S08000007", 
+                         "Highland" = "S08000008", 
+                         "Lanarkshire" = "S08000009", 
+                         "Lothian" = "S08000010", 
+                         "Orkney" = "S08000011", 
+                         "Shetland" = "S08000012", 
+                         "Tayside" = "S08000013", 
+                         "Western Isles" = "S08000014")) %>% 
+  select(Year, HB2006, Age, Sex, SexName, Pop) %>% 
+  arrange(Year, HB2006, Age, Sex)
+
+saveRDS(HB2006_pop_est_1981_2013, file.path(output_filepath, "HB2006_pop_est_1981_2013.rds"))
+
+
+
 ### 4 - HSCP ----
 
 ### 4.1 - Single Year Age Groups ----
@@ -323,7 +392,8 @@ old_CA2019_pop_est_1981_2018 <- readRDS(file.path(output_filepath, "Archive", "C
 old_CA2019_CA <- old_CA2019_pop_est_1981_2018 %>% 
   rename(Pop_2 = Pop) %>% 
   filter(Age >= 90) %>% 
-  filter(Year >= 2002 & Year <= 2010) %>% 
+  filter(Year >= 2002 & Year <= 2010) %>%
+  mutate(Year = as.numeric(Year)) %>% 
   group_by(CA2019Name, Year) %>% 
   summarise(Pop_2 = sum(Pop_2)) %>% 
   arrange(CA2019Name) %>% 
@@ -347,7 +417,7 @@ compare <- CA_compare %>%
   select(CA2019Name, Year, diff) %>% 
   spread(Year, diff)
 
-### Check Scotland level adjustments ----
+### 5.2 - Check Scotland level adjustments ----
 
 # Select the Scotland level populations for ages 80+ for 2002-2010 from corrected estimates
 
@@ -363,6 +433,7 @@ total_pop <- CA2019_pop_est_1981_2018 %>%
 old_total_pop <- old_CA2019_pop_est_1981_2018 %>% 
   filter(Age >= 80) %>% 
   filter(Year >= 2002 & Year <= 2010) %>% 
+  mutate(Year = as.numeric(Year)) %>% 
   group_by(Age, Year) %>% 
   summarise(Pop = sum(Pop)) %>% 
   ungroup() %>% 
@@ -376,3 +447,63 @@ compare_total_pop <- total_pop %>%
   mutate(diff = Pop - Pop_2) %>% 
   select(Age, Year, diff) %>% 
   spread(Age, diff)
+
+
+
+### 6 - Compare R and SPSS outputs ----
+
+
+columns <- c("Year", "geo1", "geo2", "geo3", "Age_check", "Sex", "Pop")
+
+compare_SPSS_R <- function(SPSS_data, R_data, geo1, geo2, geo3, Age_check){
+  
+  # Read in SPSS file
+  # Remove variable labels, formats and widths from SPSS
+  # Haven reads in SPSS strings as factors
+  # Convert all factors to characters in the SPSS file
+  
+  SPSS <- read_sav(file.path(SPSS_filepath, SPSS_data), user_na=F) %>%
+    zap_formats() %>%
+    zap_widths() %>%
+    remove_all_labels() %>% 
+    mutate_if(is.factor, as.character)
+  
+  # Read in R file and sort by pc7
+  
+  R <- readRDS(file.path(output_filepath, R_data)) %>% 
+    select_(., .dots = columns)
+  
+  
+  # Compare datasets
+  all_equal(SPSS, R)
+  
+}
+
+### 6.1 - Council Area ----
+
+# CA2019_pop_est_1981_2018
+compare_SPSS_R("CA2019_pop_est_1981_2018.sav", "CA2019_pop_est_1981_2018.rds", "CA2019", "CA2018", "CA2011", "Age")
+
+# CA2019_pop_est_5year_agegroups_1981_2018
+compare_SPSS_R("CA2019_pop_est_5year_agegroups_1981_2018.sav", "CA2019_pop_est_5year_agegroups_1981_2018.rds", "CA2019", "CA2018", "CA2011", "AgeGroup")
+
+
+
+### 6.2 - Health Board ----
+
+# HB2019_pop_est_1981_2018
+compare_SPSS_R("HB2019_pop_est_1981_2018.sav", "HB2019_pop_est_1981_2018.rds", "HB2019", "HB2018", "HB2014", "Age")
+
+# HB2019_pop_est_1981_2018
+compare_SPSS_R("HB2019_pop_est_5year_agegroups_1981_2018.sav", "HB2019_pop_est_5year_agegroups_1981_2018.rds", "HB2019", "HB2018", "HB2014", "AgeGroup")
+
+
+
+### 6.3 - HSCP ----
+
+# HSCP2019_pop_est_1981_2018
+compare_SPSS_R("HSCP2019_pop_est_1981_2018.sav", "HSCP2019_pop_est_1981_2018.rds", "HSCP2019", "HSCP2018", "HSCP2016", "Age")
+
+# HSCP2019_pop_est_1981_2018
+compare_SPSS_R("HSCP2019_pop_est_5year_agegroups_1981_2018.sav", "HSCP2019_pop_est_5year_agegroups_1981_2018.rds", "HSCP2019", "HSCP2018", "HSCP2016", "AgeGroup")
+
