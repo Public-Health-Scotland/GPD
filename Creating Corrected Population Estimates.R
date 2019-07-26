@@ -298,17 +298,19 @@ for (i in as.character(1981:2013)) {
 
 HB2006_pop_est_1981_2013 <- combined_data %>% 
   gather(Age, Pop, "0":"90+") %>% 
-  mutate(Age = ifelse(Age == "90+", "90", Age), 
+  rename(HB2006Name = HB2006) %>% 
+  mutate(HB2006Name = gsub("&", "and", HB2006Name), 
+         Age = ifelse(Age == "90+", "90", Age), 
          Age = as.numeric(Age), 
-         HB2006 = recode(HB2006, 
-                         "Ayrshire & Arran" = "S08000001", 
+         HB2006 = recode(HB2006Name, 
+                         "Ayrshire and Arran" = "S08000001", 
                          "Borders" = "S08000002", 
-                         "Dumfries & Galloway" = "S08000003", 
+                         "Dumfries and Galloway" = "S08000003", 
                          "Fife" = "S08000004", 
                          "Forth Valley" = "S08000005", 
                          "Grampian" = "S08000006", 
                          "Greater Glasgow" = "S08000007", 
-                         "Greater Glasgow & Clyde" = "S08000007", 
+                         "Greater Glasgow and Clyde" = "S08000007", 
                          "Highland" = "S08000008", 
                          "Lanarkshire" = "S08000009", 
                          "Lothian" = "S08000010", 
@@ -316,10 +318,71 @@ HB2006_pop_est_1981_2013 <- combined_data %>%
                          "Shetland" = "S08000012", 
                          "Tayside" = "S08000013", 
                          "Western Isles" = "S08000014")) %>% 
-  select(Year, HB2006, Age, Sex, SexName, Pop) %>% 
+  select(Year, HB2006, HB2006Name, Age, Sex, SexName, Pop) %>% 
   arrange(Year, HB2006, Age, Sex)
 
 saveRDS(HB2006_pop_est_1981_2013, file.path(output_filepath, "HB2006_pop_est_1981_2013.rds"))
+
+
+
+### 3.4 - HB2006 5 Year Age Groups ----
+
+# Create a file for 5 year age groups and sex
+# Assign a 5 year age group to each age
+
+HB2006_pop_est_5year_agegroups_1981_2013 <- HB2006_pop_est_1981_2013 %>%
+  mutate(AgeGroup = case_when(Age == 0 ~ 0, 
+                              Age >= 1 & Age <= 4 ~ 1, 
+                              Age >= 5 & Age <= 9 ~ 2, 
+                              Age >= 10 & Age <= 14 ~ 3, 
+                              Age >= 15 & Age <= 19 ~ 4, 
+                              Age >= 20 & Age <= 24 ~ 5, 
+                              Age >= 25 & Age <= 29 ~ 6, 
+                              Age >= 30 & Age <= 34 ~ 7, 
+                              Age >= 35 & Age <= 39 ~ 8, 
+                              Age >= 40 & Age <= 44 ~ 9, 
+                              Age >= 45 & Age <= 49 ~ 10, 
+                              Age >= 50 & Age <= 54 ~ 11, 
+                              Age >= 55 & Age <= 59 ~ 12, 
+                              Age >= 60 & Age <= 64 ~ 13,
+                              Age >= 65 & Age <= 69 ~ 14, 
+                              Age >= 70 & Age <= 74 ~ 15, 
+                              Age >= 75 & Age <= 79 ~ 16, 
+                              Age >= 80 & Age <= 84 ~ 17, 
+                              Age >= 85 & Age <= 89 ~ 18, 
+                              Age >= 90 ~ 19)) %>% 
+  mutate(AgeGroupName = case_when(AgeGroup == 0 ~ "0", 
+                                  AgeGroup == 1 ~ "1-4", 
+                                  AgeGroup == 2 ~ "5-9", 
+                                  AgeGroup == 3 ~ "10-14", 
+                                  AgeGroup == 4 ~ "15-19", 
+                                  AgeGroup == 5 ~ "20-24", 
+                                  AgeGroup == 6 ~ "25-29", 
+                                  AgeGroup == 7 ~ "30-34", 
+                                  AgeGroup == 8 ~ "35-39", 
+                                  AgeGroup == 9 ~ "40-44", 
+                                  AgeGroup == 10 ~ "45-49", 
+                                  AgeGroup == 11 ~ "50-54", 
+                                  AgeGroup == 12 ~ "55-59", 
+                                  AgeGroup == 13 ~ "60-64", 
+                                  AgeGroup == 14 ~ "65-69", 
+                                  AgeGroup == 15 ~ "70-74", 
+                                  AgeGroup == 16 ~ "75-79", 
+                                  AgeGroup == 17 ~ "80-84", 
+                                  AgeGroup == 18 ~ "85-89", 
+                                  AgeGroup == 19 ~ "90+"))
+
+# Aggregate the dataset into 5 year age group and sex
+# Group by Year, HB2018, HB2011, AgeGroup and Sex to get population totals for each level within this
+# Ungroup the data and select the relevant variables
+HB2006_pop_est_5year_agegroups_1981_2013 <- HB2006_pop_est_5year_agegroups_1981_2013 %>% 
+  group_by(Year, HB2006, HB2006Name, AgeGroup, AgeGroupName, Sex, SexName) %>% 
+  summarise(Pop = sum(Pop)) %>%
+  ungroup() %>%
+  select(Year, HB2006, HB2006Name, AgeGroup, AgeGroupName, Sex, SexName, Pop)
+
+saveRDS(HB2006_pop_est_5year_agegroups_1981_2013, file.path(output_filepath, "HB2006_pop_est_5year_agegroups_1981_2013.rds"))
+
 
 
 
@@ -452,6 +515,7 @@ compare_total_pop <- total_pop %>%
 
 ### 6 - Compare R and SPSS outputs ----
 
+# Create list of columns to keep for function
 
 columns <- c("Year", "geo1", "geo2", "geo3", "Age_check", "Sex", "Pop")
 
@@ -468,11 +532,10 @@ compare_SPSS_R <- function(SPSS_data, R_data, geo1, geo2, geo3, Age_check){
     remove_all_labels() %>% 
     mutate_if(is.factor, as.character)
   
-  # Read in R file and sort by pc7
+  # Read in R file and select relevant columns
   
   R <- readRDS(file.path(output_filepath, R_data)) %>% 
     select_(., .dots = columns)
-  
   
   # Compare datasets
   all_equal(SPSS, R)
@@ -488,15 +551,13 @@ compare_SPSS_R("CA2019_pop_est_1981_2018.sav", "CA2019_pop_est_1981_2018.rds", "
 compare_SPSS_R("CA2019_pop_est_5year_agegroups_1981_2018.sav", "CA2019_pop_est_5year_agegroups_1981_2018.rds", "CA2019", "CA2018", "CA2011", "AgeGroup")
 
 
-
 ### 6.2 - Health Board ----
 
 # HB2019_pop_est_1981_2018
 compare_SPSS_R("HB2019_pop_est_1981_2018.sav", "HB2019_pop_est_1981_2018.rds", "HB2019", "HB2018", "HB2014", "Age")
 
-# HB2019_pop_est_1981_2018
+# HB2019_pop_est_5year_agegroups_1981_2018
 compare_SPSS_R("HB2019_pop_est_5year_agegroups_1981_2018.sav", "HB2019_pop_est_5year_agegroups_1981_2018.rds", "HB2019", "HB2018", "HB2014", "AgeGroup")
-
 
 
 ### 6.3 - HSCP ----
@@ -504,6 +565,43 @@ compare_SPSS_R("HB2019_pop_est_5year_agegroups_1981_2018.sav", "HB2019_pop_est_5
 # HSCP2019_pop_est_1981_2018
 compare_SPSS_R("HSCP2019_pop_est_1981_2018.sav", "HSCP2019_pop_est_1981_2018.rds", "HSCP2019", "HSCP2018", "HSCP2016", "Age")
 
-# HSCP2019_pop_est_1981_2018
+# HSCP2019_pop_est_5year_agegroups_1981_2018
 compare_SPSS_R("HSCP2019_pop_est_5year_agegroups_1981_2018.sav", "HSCP2019_pop_est_5year_agegroups_1981_2018.rds", "HSCP2019", "HSCP2018", "HSCP2016", "AgeGroup")
+
+
+### 6.4 - HB2006 ----
+
+# Update list of columns to keep for function as only HB2006 is required here
+
+columns_HB2006 <- c("Year", "geo1", "Age_check", "Sex", "Pop")
+
+compare_SPSS_R_HB2006 <- function(SPSS_data, R_data, geo1, Age_check){
+  
+  # Read in SPSS file
+  # Remove variable labels, formats and widths from SPSS
+  # Haven reads in SPSS strings as factors
+  # Convert all factors to characters in the SPSS file
+  
+  SPSS <- read_sav(file.path(SPSS_filepath, SPSS_data), user_na=F) %>%
+    zap_formats() %>%
+    zap_widths() %>%
+    remove_all_labels() %>% 
+    mutate_if(is.factor, as.character)
+  
+  # Read in R file and select relevant columns
+  
+  R <- readRDS(file.path(output_filepath, R_data)) %>% 
+    select_(., .dots = columns_HB2006)
+  
+  # Compare datasets
+  all_equal(SPSS, R)
+  
+}
+
+
+# HB2006_pop_est_1981_2013
+compare_SPSS_R_HB2006("HB2006_pop_est_1981_2013.sav", "HB2006_pop_est_1981_2013.rds", "HB2006", "Age")
+
+# HB2006_pop_est_5year_agegroups_1981_2013
+compare_SPSS_R_HB2006("HB2006_pop_est_5year_agegroups_1981_2013.sav", "HB2006_pop_est_5year_agegroups_1981_2013.rds", "HB2006", "AgeGroup")
 
