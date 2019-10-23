@@ -28,8 +28,11 @@ od_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", "Publications",
 pop_proj <- function(filepath, a, b){
   
   geo_pop_proj_2016_2041 <- readRDS(filepath) %>% 
-    select(-Sex) %>% 
-    rename(Sex = SexName) %>% 
+    select(-sex) %>% 
+    rename(Sex = sex_name, 
+           Year = year, 
+           Age = age, 
+           Pop = pop) %>% 
     arrange(Year, Sex, Age) %>% 
     spread(Age, Pop)
   
@@ -62,16 +65,16 @@ pop_proj <- function(filepath, a, b){
 ### 3 - Read in Population Estimates ----
 
 # Read in Scotland projections
-Scot_pop_proj_2018_2043 <- pop_proj(filepath = "scot_pop_proj_2018_2043.rds", a = 3, b = 93)
+Scot_pop_proj_2018_2043 <- pop_proj(filepath = file.path(base_filepath, "scot_pop_proj_2018_2043.rds"), a = 3, b = 93)
 
 # Read in CA2011 estimates
-CA2011_pop_proj_2016_2041 <- pop_proj(filepath = "CA2018_pop_proj_2016_2041.rds", a = 6, b = 96)
+CA2011_pop_proj_2016_2041 <- pop_proj(filepath = file.path(base_filepath, "CA2018_pop_proj_2016_2041.rds"), a = 6, b = 96)
 
 # Read in HB2014 estimates
-HB2014_pop_proj_2016_2041 <- pop_proj(filepath = "HB2018_pop_proj_2016_2041.rds", a = 6, b = 96)
+HB2014_pop_proj_2016_2041 <- pop_proj(filepath = file.path(base_filepath, "HB2018_pop_proj_2016_2041.rds"), a = 6, b = 96)
 
 # Read in HSCP2016 estimates
-HSCP2016_pop_proj_2016_2041 <- pop_proj(filepath = "HSCP2018_pop_proj_2016_2041.rds", a = 6, b = 96)
+HSCP2016_pop_proj_2016_2041 <- pop_proj(filepath = file.path(base_filepath, "HSCP2018_pop_proj_2016_2041.rds"), a = 6, b = 96)
 
 
 ### 4 - Tidy Scotland data ----

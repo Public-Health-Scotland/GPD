@@ -11,6 +11,8 @@
 # install.packages("tidyr")
 # install.packages("dplyr")
 # install.packages("readxl")
+# install.packages("readr")
+# install.packages("janitor")
 #
 # Description - Code for creating ISD files for NRS population projections for Scotland, 
 #               Health Board, HSCP and Council Area
@@ -24,6 +26,7 @@ library(tidyr)
 library(dplyr)
 library(readxl)
 library(readr)
+library(janitor)
 
 ### 2 - Create Scotland population projection files ----
 
@@ -47,10 +50,12 @@ scot_pop <- function(filepath, cells, gender){
 ### 2.2 - Create male and female Scotland population projections ----
 
 # Create male population projections
-scot_pop_proj_2018_2043_m <- scot_pop(filepath = file.path(base_filepath, "Source Data", "scot_pop_proj_2018_2043.xlsx"), cells = "A137:AA264", gender = 1)
+scot_pop_proj_2018_2043_m <- scot_pop(filepath = file.path(base_filepath, "Source Data", "scot_pop_proj_2018_2043.xlsx"), cells = "A137:AA264", gender = 1) %>% 
+  clean_names()
 
 # Create female population projections
-scot_pop_proj_2018_2043_f <- scot_pop(filepath = file.path(base_filepath, "Source Data", "scot_pop_proj_2018_2043.xlsx"), cells = "A269:AA396", gender = 2)
+scot_pop_proj_2018_2043_f <- scot_pop(filepath = file.path(base_filepath, "Source Data", "scot_pop_proj_2018_2043.xlsx"), cells = "A269:AA396", gender = 2) %>% 
+  clean_names()
 
 
 ### 2.3 - Create Scotland population projections by single year of age ----
@@ -64,16 +69,16 @@ scot_pop_proj_2018_2043_f <- scot_pop(filepath = file.path(base_filepath, "Sourc
 # Ungroup and set AgeGroup as an integer
 
 scot_pop_proj_2018_2043 <- bind_rows(scot_pop_proj_2018_2043_m, scot_pop_proj_2018_2043_f) %>% 
-  arrange(Year, Age, Sex) %>% 
-  mutate(Year = as.integer(Year), 
-         Pop = as.integer(Pop), 
-         Sex = as.integer(Sex), 
-         SexName = recode(Sex, "1" = "Male", "2" = "Female"), 
-         Age = if_else(Age > 90, 90, Age)) %>%
-  group_by(Year, Age, Sex, SexName) %>% 
-  summarise(Pop = sum(Pop)) %>% 
+  arrange(year, age, sex) %>% 
+  mutate(year = as.integer(year), 
+         pop = as.integer(pop), 
+         sex = as.integer(sex), 
+         sex_name = recode(sex, "1" = "Male", "2" = "Female"), 
+         age = if_else(age > 90, 90, age)) %>%
+  group_by(year, age, sex, sex_name) %>% 
+  summarise(pop = sum(pop)) %>% 
   ungroup() %>% 
-  mutate(Age = as.integer(Age))
+  mutate(age = as.integer(age))
 
 saveRDS(scot_pop_proj_2018_2043, file.path(base_filepath, "Lookup Files", "R Files", "scot_pop_proj_2018_2043.rds"))
 
@@ -87,50 +92,50 @@ saveRDS(scot_pop_proj_2018_2043, file.path(base_filepath, "Lookup Files", "R Fil
 # Ungroup and set AgeGroup as an integer
 
 scot_pop_proj_2018_2043_5y <- scot_pop_proj_2018_2043 %>% 
-  mutate(AgeGroup = case_when(Age == 0 ~ 0, 
-                              Age >= 1 & Age <= 4 ~ 1, 
-                              Age >= 5 & Age <= 9 ~ 2, 
-                              Age >= 10 & Age <= 14 ~ 3, 
-                              Age >= 15 & Age <= 19 ~ 4, 
-                              Age >= 20 & Age <= 24 ~ 5, 
-                              Age >= 25 & Age <= 29 ~ 6, 
-                              Age >= 30 & Age <= 34 ~ 7, 
-                              Age >= 35 & Age <= 39 ~ 8, 
-                              Age >= 40 & Age <= 44 ~ 9, 
-                              Age >= 45 & Age <= 49 ~ 10, 
-                              Age >= 50 & Age <= 54 ~ 11, 
-                              Age >= 55 & Age <= 59 ~ 12, 
-                              Age >= 60 & Age <= 64 ~ 13, 
-                              Age >= 65 & Age <= 69 ~ 14, 
-                              Age >= 70 & Age <= 74 ~ 15, 
-                              Age >= 75 & Age <= 79 ~ 16, 
-                              Age >= 80 & Age <= 84 ~ 17, 
-                              Age >= 85 & Age <= 89 ~ 18, 
-                              Age >= 90 ~ 19), 
-         AgeGroupName = case_when(AgeGroup == 0 ~ "0", 
-                                  AgeGroup == 1 ~ "1-4", 
-                                  AgeGroup == 2 ~ "5-9", 
-                                  AgeGroup == 3 ~ "10-14", 
-                                  AgeGroup == 4 ~ "15-19", 
-                                  AgeGroup == 5 ~ "20-24", 
-                                  AgeGroup == 6 ~ "25-29", 
-                                  AgeGroup == 7 ~ "30-34", 
-                                  AgeGroup == 8 ~ "35-39", 
-                                  AgeGroup == 9 ~ "40-44", 
-                                  AgeGroup == 10 ~ "45-49", 
-                                  AgeGroup == 11 ~ "50-54", 
-                                  AgeGroup == 12 ~ "55-59", 
-                                  AgeGroup == 13 ~ "60-64", 
-                                  AgeGroup == 14 ~ "65-69", 
-                                  AgeGroup == 15 ~ "70-74", 
-                                  AgeGroup == 16 ~ "75-79", 
-                                  AgeGroup == 17 ~ "80-84", 
-                                  AgeGroup == 18 ~ "85-89", 
-                                  AgeGroup == 19 ~ "90+")) %>% 
-  group_by(Year, AgeGroup, AgeGroupName, Sex, SexName) %>% 
-  summarise(Pop = sum(Pop)) %>% 
+  mutate(age_group = case_when(age == 0 ~ 0, 
+                              age >= 1 & age <= 4 ~ 1, 
+                              age >= 5 & age <= 9 ~ 2, 
+                              age >= 10 & age <= 14 ~ 3, 
+                              age >= 15 & age <= 19 ~ 4, 
+                              age >= 20 & age <= 24 ~ 5, 
+                              age >= 25 & age <= 29 ~ 6, 
+                              age >= 30 & age <= 34 ~ 7, 
+                              age >= 35 & age <= 39 ~ 8, 
+                              age >= 40 & age <= 44 ~ 9, 
+                              age >= 45 & age <= 49 ~ 10, 
+                              age >= 50 & age <= 54 ~ 11, 
+                              age >= 55 & age <= 59 ~ 12, 
+                              age >= 60 & age <= 64 ~ 13, 
+                              age >= 65 & age <= 69 ~ 14, 
+                              age >= 70 & age <= 74 ~ 15, 
+                              age >= 75 & age <= 79 ~ 16, 
+                              age >= 80 & age <= 84 ~ 17, 
+                              age >= 85 & age <= 89 ~ 18, 
+                              age >= 90 ~ 19), 
+         age_group_name = case_when(age_group == 0 ~ "0", 
+                                  age_group == 1 ~ "1-4", 
+                                  age_group == 2 ~ "5-9", 
+                                  age_group == 3 ~ "10-14", 
+                                  age_group == 4 ~ "15-19", 
+                                  age_group == 5 ~ "20-24", 
+                                  age_group == 6 ~ "25-29", 
+                                  age_group == 7 ~ "30-34", 
+                                  age_group == 8 ~ "35-39", 
+                                  age_group == 9 ~ "40-44", 
+                                  age_group == 10 ~ "45-49", 
+                                  age_group == 11 ~ "50-54", 
+                                  age_group == 12 ~ "55-59", 
+                                  age_group == 13 ~ "60-64", 
+                                  age_group == 14 ~ "65-69", 
+                                  age_group == 15 ~ "70-74", 
+                                  age_group == 16 ~ "75-79", 
+                                  age_group == 17 ~ "80-84", 
+                                  age_group == 18 ~ "85-89", 
+                                  age_group == 19 ~ "90+")) %>% 
+  group_by(year, age_group, age_group_name, sex, sex_name) %>% 
+  summarise(pop = sum(pop)) %>% 
   ungroup() %>% 
-  mutate(AgeGroup = as.integer(AgeGroup))
+  mutate(age_group = as.integer(age_group))
 
 saveRDS(scot_pop_proj_2018_2043_5y, file.path(base_filepath, "Lookup Files", "R Files", "scot_pop_proj_5year_agegroups_2018_2043.rds"))
 

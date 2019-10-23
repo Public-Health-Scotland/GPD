@@ -13,6 +13,7 @@
 # install.packages("stringr")
 # install.packages("haven")
 # install.packages("sjlabelled")
+# install.packages("janitor")
 #
 # Description - Code for comparing R and SPSS lookup files for population projections
 #
@@ -31,6 +32,7 @@ library(dplyr)
 library(stringr)
 library(haven)
 library(sjlabelled)
+library(janitor)
 
 
 ### 2 - Compare Council Area Files ----
@@ -40,18 +42,20 @@ library(sjlabelled)
 # Read in SPSS file
 # Remove variable labels, formats and widths from SPSS
 # Mutate numeric to integers for matching
+# Use clean_names so column names match
 
 scot_pop_proj_2018_2043_SPSS <- read_sav(file.path(SPSS_filepath, "scot_pop_proj_2018_2043.sav"), user_na=F) %>%
   zap_formats() %>%
   zap_widths() %>%
   remove_all_labels() %>% 
-  mutate_if(is.numeric, as.integer)
+  mutate_if(is.numeric, as.integer) %>% 
+  clean_names()
 
 # Read in R file
 # Remove SexName column
 
 scot_pop_proj_2018_2043_R <- readRDS(file.path(R_filepath, "scot_pop_proj_2018_2043.rds")) %>% 
-  select(-c(SexName))
+  select(-c(sex_name))
 
 all_equal(scot_pop_proj_2018_2043_R, scot_pop_proj_2018_2043_SPSS)
 
@@ -61,17 +65,19 @@ all_equal(scot_pop_proj_2018_2043_R, scot_pop_proj_2018_2043_SPSS)
 # Read in SPSS file
 # Remove variable labels, formats and widths from SPSS
 # Mutate numeric to integers for matching
+# Use clean_names so column names match
 
 scot_pop_proj_2018_2043_5y_SPSS <- read_sav(file.path(SPSS_filepath, "scot_pop_proj_5year_agegroups_2018_2043.sav"), user_na=F) %>%
   zap_formats() %>%
   zap_widths() %>%
   remove_all_labels() %>% 
-  mutate_if(is.numeric, as.integer)
+  mutate_if(is.numeric, as.integer) %>% 
+  clean_names()
 
 # Read in R file
 # Remove SexName and AgeGroupName columns
 
 scot_pop_proj_2018_2043_5y_R <- readRDS(file.path(R_filepath, "scot_pop_proj_5year_agegroups_2018_2043.rds")) %>% 
-  select(-c(SexName, AgeGroupName))
+  select(-c(sex_name, age_group_name))
 
 all_equal(scot_pop_proj_2018_2043_R, scot_pop_proj_2018_2043_SPSS)
