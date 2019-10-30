@@ -3,12 +3,16 @@
 # Codename - Update CA Pop Estimates
 # Original Author - Calum Purdie
 # Original Date - 24/10/2019
+# Updated - 30/10/2019
 # Type - Updating files
 # Written/run on - R Studio Desktop 
 # Version - 3.5.1
 #
 # install.packages("tidyr")
 # install.packages("dplyr")
+# install.packages("tidylog")
+# install.packages("readr")
+# install.packages("glue")
 #
 # Description - Code for updating Council Area population estimates in the Populations Datamart.
 # Approximate run time - <1 second
@@ -17,6 +21,7 @@ library(tidyr)
 library(dplyr)
 library(tidylog)
 library(readr)
+library(glue)
 
 # Set filepaths
 
@@ -28,10 +33,14 @@ templates_filepath <- file.path(base_filepath, "Population Datamart", "Creation 
 datamart_filepath <- file.path(base_filepath, "Population Datamart", "Lookup Files", 
                                "Other Geographies")
 
+# Set date for filenames
+
+date <- strftime(Sys.Date(), format = "%Y%m%d")
+
 
 ### 2 - Create Datamart File for Council Area Population Estimates ----
 
-council_area <- function(year, date, pop_name, file, file_name){
+council_area <- function(year, pop_name, file, file_name){
 
 # Get most recent population estimates file
 # Filter for required year
@@ -62,18 +71,18 @@ data <- readRDS(file.path(lookups_filepath, file)) %>%
 # Remove the Year column
 
 Template_CA_estimates <- readRDS(file.path(templates_filepath, "Template_CA_estimates.rds")) %>% 
-  bind_rows(CA_pop_est) %>% 
+  bind_rows(data) %>% 
   mutate(Location = if_else(Population_Name == "POPULATION", date, Location), 
          Age_Band = if_else(Population_Name == "POPULATION", year, Age_Band)) %>% 
   select(-Year)
 
 # Save as csv
 
-write_csv(Template_CA_estimates, file.path(datamart_filepath, 
-                                           paste0("POPULATION_", file_name, "_", year, "_", date, 
-                                                  ".csv")), col_names = F)
+write_csv(Template_CA_estimates, 
+          glue("{datamart_filepath}/POPULATION_{file_name}_{year}_{date}.csv"), 
+               col_names = F)
 
 }
 
-ca_estimates(year = "2018", date = "20192410", pop_name = "Council Area Population Estimates", 
+council_area(year = "2018", pop_name = "Council Area Population Estimates", 
              file = "CA2019_pop_est_1981_2018.rds", file_name = "CA_ESTIMATES")
