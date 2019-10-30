@@ -14,12 +14,15 @@
 # install.packages("readr")
 # install.packages("janitor")
 #
-# Description - Code for creating ISD files for NRS population projections for Scotland, 
-#               Health Board, HSCP and Council Area
+# Description - Code for creating ISD files for NRS population projections for 
+# Scotland, Health Board, HSCP and Council Area
 # Approximate run time - 30 seconds
 
-base_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", "Referencing & Standards", 
-                           "GPD", "2_Population", "Population Projections")
+base_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", 
+                           "Referencing & Standards", "GPD", "2_Population", 
+                           "Population Projections")
+lookup_filepath <- file.path(base_filepath, "Lookup Files", "R Files")
+data_filepath <- file.path(base_filepath, "Source Data")
 
 # Read in packages from library
 library(tidyr)
@@ -34,7 +37,8 @@ library(janitor)
 
 scot_pop <- function(filepath, cells, gender){
   
-  scotproj_2018_2043 <- read_xlsx(path = filepath, sheet = "Principal", range = cells)
+  scotproj_2018_2043 <- read_xlsx(path = filepath, sheet = "Principal", 
+                                  range = cells)
   
   # Rename variables
   names(scotproj_2018_2043)<- c("Age","2018":"2043")
@@ -50,11 +54,17 @@ scot_pop <- function(filepath, cells, gender){
 ### 2.2 - Create male and female Scotland population projections ----
 
 # Create male population projections
-scot_pop_proj_2018_2043_m <- scot_pop(filepath = file.path(base_filepath, "Source Data", "scot_pop_proj_2018_2043.xlsx"), cells = "A137:AA264", gender = 1) %>% 
+scot_pop_proj_2018_2043_m <- 
+  scot_pop(filepath = file.path(base_filepath, "Source Data", 
+                                "scot_pop_proj_2018_2043.xlsx"), 
+           cells = "A137:AA264", gender = 1) %>% 
   clean_names()
 
 # Create female population projections
-scot_pop_proj_2018_2043_f <- scot_pop(filepath = file.path(base_filepath, "Source Data", "scot_pop_proj_2018_2043.xlsx"), cells = "A269:AA396", gender = 2) %>% 
+scot_pop_proj_2018_2043_f <- 
+  scot_pop(filepath = file.path(base_filepath, "Source Data", 
+                                "scot_pop_proj_2018_2043.xlsx"), 
+           cells = "A269:AA396", gender = 2) %>% 
   clean_names()
 
 
@@ -64,11 +74,13 @@ scot_pop_proj_2018_2043_f <- scot_pop(filepath = file.path(base_filepath, "Sourc
 # Sort by Year, Age and Sex
 # Set all variables as integers
 # Create SexName column
-# Recode all Age values greater than 90 to 90 for consistency with previous projections
+# Recode all Age values greater than 90 to 90 for consistency with previous 
+# projections
 # group_by all columns except Pop and calculate new Pop values for Age = 90
 # Ungroup and set AgeGroup as an integer
 
-scot_pop_proj_2018_2043 <- bind_rows(scot_pop_proj_2018_2043_m, scot_pop_proj_2018_2043_f) %>% 
+scot_pop_proj_2018_2043 <- bind_rows(scot_pop_proj_2018_2043_m, 
+                                     scot_pop_proj_2018_2043_f) %>% 
   arrange(year, age, sex) %>% 
   mutate(year = as.integer(year), 
          pop = as.integer(pop), 
@@ -80,7 +92,9 @@ scot_pop_proj_2018_2043 <- bind_rows(scot_pop_proj_2018_2043_m, scot_pop_proj_20
   ungroup() %>% 
   mutate(age = as.integer(age))
 
-saveRDS(scot_pop_proj_2018_2043, file.path(base_filepath, "Lookup Files", "R Files", "scot_pop_proj_2018_2043.rds"))
+saveRDS(scot_pop_proj_2018_2043, 
+        file.path(base_filepath, "Lookup Files", "R Files", 
+                  "scot_pop_proj_2018_2043.rds"))
 
 
 
@@ -137,7 +151,9 @@ scot_pop_proj_2018_2043_5y <- scot_pop_proj_2018_2043 %>%
   ungroup() %>% 
   mutate(age_group = as.integer(age_group))
 
-saveRDS(scot_pop_proj_2018_2043_5y, file.path(base_filepath, "Lookup Files", "R Files", "scot_pop_proj_5year_agegroups_2018_2043.rds"))
+saveRDS(scot_pop_proj_2018_2043_5y, 
+        file.path(base_filepath, "Lookup Files", "R Files", 
+                  "scot_pop_proj_5year_agegroups_2018_2043.rds"))
 
 
 
@@ -154,23 +170,40 @@ lower_geo_pop <- function(filepath, cells, gender){
   sheet_names <- sheet_names[5:30]
 
   # Read in the data for each year using sheet_names
-  list_all <- lapply(sheet_names, function(i) read_xlsx(path = filepath, sheet = i, range = cells))
+  list_all <- lapply(sheet_names, 
+                     function(i) read_xlsx(path = filepath, sheet = i, 
+                                           range = cells))
   
   # Add a column for Sex to each year's data and create a Year column
-  lower_geo_2016_2041 <- mapply(cbind, list_all, "Sex" = gender, "Year" = seq.int(2016, 2041), SIMPLIFY = F)
+  lower_geo_2016_2041 <- mapply(cbind, list_all, "Sex" = gender, 
+                                "Year" = seq.int(2016, 2041), SIMPLIFY = F)
   
   # Turn the list into a dataframe
   lower_geo_proj_2016_2041 <- do.call(rbind.data.frame, lower_geo_2016_2041)
+  
+  lower_geo_proj_2016_2041 <- lower_geo_proj_2016_2041 %>% 
+    gather("Age", "Pop", 'All ages':'90') %>% 
+    filter(Area != "SCOTLAND" & Age != "All ages")
 }
 
 
 ### 3.2 - Create male and female Council Area projections ----
 
+# Update filepaths for new release
+
 # Create the male population projections
-CA_proj_2016_2041_m <- lower_geo_pop(filepath = "Source Data/ca_pop_proj_2016_2041.xlsx", cells = "A42:CP75", gender = 1)
+CA_proj_2016_2041_m <- lower_geo_pop(file.path(data_filepath, "Archive", 
+                                               "2016_2041", 
+                                               "ca_pop_proj_2016_2041.xlsx"), 
+                                     cells = "A42:CP75", gender = 1) %>% 
+  clean_names()
 
 # Create the female population projections
-CA_proj_2016_2041_f <- lower_geo_pop(filepath = "Source Data/ca_pop_proj_2016_2041.xlsx", cells = "A80:CP113", gender = 2)
+CA_proj_2016_2041_f <- lower_geo_pop(file.path(data_filepath, "Archive", 
+                                               "2016_2041", 
+                                               "ca_pop_proj_2016_2041.xlsx"), 
+                                     cells = "A80:CP113", gender = 2) %>% 
+  clean_names()
 
 
 ### 3.3 - Create Council Area population projections by single year of age ----
@@ -178,20 +211,18 @@ CA_proj_2016_2041_f <- lower_geo_pop(filepath = "Source Data/ca_pop_proj_2016_20
 # Add the male and female files together
 
 CA_pop_proj_2016_2041 <- bind_rows(CA_proj_2016_2041_m, CA_proj_2016_2041_f) %>% 
-  gather("Age", "Pop", 'All ages':'90') %>% 
-  filter(Area != "SCOTLAND" & Age != "All ages") %>% 
-  rename(CA2011 = Code) %>% 
-  mutate(CA2018 = recode(CA2011, 'S12000015' = 'S12000047', 'S12000024' = 'S12000048')) %>% 
-  rename(CA2018Name = Area) %>% 
-  mutate(Age = as.integer(Age)) %>% 
-  mutate(SexName = recode(Sex, "1" = "Male", "2" = "Female")) %>% 
-  select(Year, CA2018, CA2018Name, CA2011, Age, Sex, SexName, Pop) %>% 
-  arrange(Year, CA2018, Age, Sex)
+  rename(ca2011 = code) %>% 
+  mutate(ca2018 = recode(ca2011, 'S12000015' = 'S12000047', 
+                                 'S12000024' = 'S12000048')) %>% 
+  rename(ca2018_name = area) %>% 
+  mutate(age = as.integer(age)) %>% 
+  mutate(sex_name = recode(sex, "1" = "Male", "2" = "Female")) %>% 
+  select(year, ca2018, ca2018_name, ca2011, age, sex, sex_name, pop) %>% 
+  arrange(year, ca2018, age, sex) %>% 
+  mutate(ca2018_name = gsub("&", "and", ca2018_name))
 
-# Change CA2018Name values to "and" rather than "&"
-CA_pop_proj_2016_2041$CA2018Name <- gsub("&", "and", CA_pop_proj_2016_2041$CA2018Name)
-
-saveRDS(CA_pop_proj_2016_2041, "Lookup Files/R Files/CA2018_pop_proj_2016_2041.rds")
+saveRDS(CA_pop_proj_2016_2041, 
+        file.path(lookup_filepath, "CA2018_pop_proj_2016_2041.rds"))
 
 
 ### 3.4 - Create file for 5 year age groups ----
@@ -203,33 +234,35 @@ saveRDS(CA_pop_proj_2016_2041, "Lookup Files/R Files/CA2018_pop_proj_2016_2041.r
 # Reorder columns
 
 CA_pop_proj_2016_2041_5y <- CA_pop_proj_2016_2041 %>% 
-  mutate(AgeGroup = case_when(Age == 0 ~ 0, 
-                              Age >= 1 & Age <= 4 ~ 1, 
-                              Age >= 5 & Age <= 9 ~ 2, 
-                              Age >= 10 & Age <= 14 ~ 3, 
-                              Age >= 15 & Age <= 19 ~ 4, 
-                              Age >= 20 & Age <= 24 ~ 5, 
-                              Age >= 25 & Age <= 29 ~ 6, 
-                              Age >= 30 & Age <= 34 ~ 7, 
-                              Age >= 35 & Age <= 39 ~ 8, 
-                              Age >= 40 & Age <= 44 ~ 9, 
-                              Age >= 45 & Age <= 49 ~ 10, 
-                              Age >= 50 & Age <= 54 ~ 11, 
-                              Age >= 55 & Age <= 59 ~ 12, 
-                              Age >= 60 & Age <= 64 ~ 13, 
-                              Age >= 65 & Age <= 69 ~ 14, 
-                              Age >= 70 & Age <= 74 ~ 15, 
-                              Age >= 75 & Age <= 79 ~ 16, 
-                              Age >= 80 & Age <= 84 ~ 17, 
-                              Age >= 85 & Age <= 89 ~ 18, 
-                              Age >= 90 ~ 19)) %>% 
-  group_by(Year, CA2018, CA2018Name, CA2011, AgeGroup, Sex, SexName) %>% 
-  summarise(Pop = sum(Pop)) %>% 
+  mutate(age_group = case_when(age == 0 ~ 0, 
+                              age >= 1 & age <= 4 ~ 1, 
+                              age >= 5 & age <= 9 ~ 2, 
+                              age >= 10 & age <= 14 ~ 3, 
+                              age >= 15 & age <= 19 ~ 4, 
+                              age >= 20 & age <= 24 ~ 5, 
+                              age >= 25 & age <= 29 ~ 6, 
+                              age >= 30 & age <= 34 ~ 7, 
+                              age >= 35 & age <= 39 ~ 8, 
+                              age >= 40 & age <= 44 ~ 9, 
+                              age >= 45 & age <= 49 ~ 10, 
+                              age >= 50 & age <= 54 ~ 11, 
+                              age >= 55 & age <= 59 ~ 12, 
+                              age >= 60 & age <= 64 ~ 13, 
+                              age >= 65 & age <= 69 ~ 14, 
+                              age >= 70 & age <= 74 ~ 15, 
+                              age >= 75 & age <= 79 ~ 16, 
+                              age >= 80 & age <= 84 ~ 17, 
+                              age >= 85 & age <= 89 ~ 18, 
+                              age >= 90 ~ 19)) %>% 
+  group_by(year, ca2018, ca2018_name, ca2011, age_group, sex, sex_name) %>% 
+  summarise(pop = sum(pop)) %>% 
   ungroup() %>% 
-  mutate(AgeGroup = as.integer(AgeGroup)) %>% 
-  select(Year, CA2018, CA2018Name, CA2011, AgeGroup, Sex, SexName, Pop)
+  mutate(age_group = as.integer(age_group)) %>% 
+  select(year, ca2018, ca2018_name, ca2011, age_group, sex, sex_name, pop)
 
-saveRDS(CA_pop_proj_2016_2041_5y, "Lookup Files/R Files/CA2018_pop_proj_5year_agegroups_2016_2041.rds")
+saveRDS(CA_pop_proj_2016_2041_5y, 
+        file.path(lookup_filepath, 
+                  "CA2018_pop_proj_5year_agegroups_2016_2041.rds"))
 
 
 
@@ -238,10 +271,18 @@ saveRDS(CA_pop_proj_2016_2041_5y, "Lookup Files/R Files/CA2018_pop_proj_5year_ag
 ### 4.1 - Use lower geography population function to read in data ----
 
 # Create the male population projections
-HB_proj_2016_2041_m <- lower_geo_pop(filepath = "Source Data/hb_pop_proj_2016_2041.xlsx", cells = "A24:CP39", gender = 1)
+HB_proj_2016_2041_m <- lower_geo_pop(file.path(data_filepath, "Archive", 
+                                               "2016_2041", 
+                                               "hb_pop_proj_2016_2041.xlsx"), 
+                                     cells = "A24:CP39", gender = 1) %>% 
+  clean_names()
 
 # Create the female population projections
-HB_proj_2016_2041_f <- lower_geo_pop(filepath = "Source Data/hb_pop_proj_2016_2041.xlsx", cells = "A44:CP59", gender = 2)
+HB_proj_2016_2041_f <- lower_geo_pop(file.path(data_filepath, "Archive", 
+                                               "2016_2041", 
+                                               "hb_pop_proj_2016_2041.xlsx"), 
+                                     cells = "A44:CP59", gender = 2) %>% 
+  clean_names()
 
 
 ### 4.2 - Create Council Area population projections by single year of age ----
@@ -249,20 +290,18 @@ HB_proj_2016_2041_f <- lower_geo_pop(filepath = "Source Data/hb_pop_proj_2016_20
 # Add the male and female files together
 
 HB_pop_proj_2016_2041 <- bind_rows(HB_proj_2016_2041_m, HB_proj_2016_2041_f) %>% 
-  gather("Age", "Pop", 'All ages':'90') %>% 
-  filter(Area != "SCOTLAND" & Age != "All ages") %>% 
-  rename(HB2014 = Code) %>% 
-  mutate(HB2018 = recode(HB2014, 'S08000018' = 'S08000029', 'S08000027' = 'S08000030')) %>% 
-  rename(HB2018Name = Area) %>% 
-  mutate(Age = as.integer(Age)) %>% 
-  mutate(SexName = recode(Sex, "1" = "Male", "2" = "Female")) %>% 
-  select(Year, HB2018, HB2018Name, HB2014, Age, Sex, SexName, Pop) %>% 
-  arrange(Year, HB2018, Age, Sex)
+  rename(hb2014 = code) %>% 
+  mutate(hb2018 = recode(hb2014, 'S08000018' = 'S08000029', 
+                                 'S08000027' = 'S08000030')) %>% 
+  rename(hb2018_name = area) %>% 
+  mutate(age = as.integer(age)) %>% 
+  mutate(sex_name = recode(sex, "1" = "Male", "2" = "Female")) %>% 
+  select(year, hb2018, hb2018_name, hb2014, age, sex, sex_name, pop) %>% 
+  arrange(year, hb2018, age, sex) %>% 
+  mutate(hb2018_name = gsub("&", "and", hb2018_name))
 
-# Change CA2018Name values to "and" rather than "&"
-HB_pop_proj_2016_2041$HB2018Name <- gsub("&", "and", HB_pop_proj_2016_2041$HB2018Name)
-
-saveRDS(HB_pop_proj_2016_2041, "Lookup Files/R Files/HB2018_pop_proj_2016_2041.rds")
+saveRDS(HB_pop_proj_2016_2041, file.path(lookup_filepath, 
+                                         "HB2018_pop_proj_2016_2041.rds"))
 
 
 ### 4.3 - Create file for 5 year age groups ----
@@ -273,33 +312,35 @@ saveRDS(HB_pop_proj_2016_2041, "Lookup Files/R Files/HB2018_pop_proj_2016_2041.r
 # Ungroup and set AgeGroup as an integer
 # Reorder columns
 HB_pop_proj_2016_2041_5y <- HB_pop_proj_2016_2041 %>% 
-  mutate(AgeGroup = case_when(Age == 0 ~ 0, 
-                              Age >= 1 & Age <= 4 ~ 1, 
-                              Age >= 5 & Age <= 9 ~ 2, 
-                              Age >= 10 & Age <= 14 ~ 3, 
-                              Age >= 15 & Age <= 19 ~ 4, 
-                              Age >= 20 & Age <= 24 ~ 5, 
-                              Age >= 25 & Age <= 29 ~ 6, 
-                              Age >= 30 & Age <= 34 ~ 7, 
-                              Age >= 35 & Age <= 39 ~ 8, 
-                              Age >= 40 & Age <= 44 ~ 9, 
-                              Age >= 45 & Age <= 49 ~ 10, 
-                              Age >= 50 & Age <= 54 ~ 11, 
-                              Age >= 55 & Age <= 59 ~ 12, 
-                              Age >= 60 & Age <= 64 ~ 13,
-                              Age >= 65 & Age <= 69 ~ 14, 
-                              Age >= 70 & Age <= 74 ~ 15, 
-                              Age >= 75 & Age <= 79 ~ 16, 
-                              Age >= 80 & Age <= 84 ~ 17, 
-                              Age >= 85 & Age <= 89 ~ 18, 
-                              Age >= 90 ~ 19)) %>% 
-  group_by(Year, HB2018, HB2018Name, HB2014, AgeGroup, Sex, SexName) %>% 
-  summarise(Pop = sum(Pop)) %>% 
+  mutate(age_group = case_when(age == 0 ~ 0, 
+                               age >= 1 & age <= 4 ~ 1, 
+                               age >= 5 & age <= 9 ~ 2, 
+                               age >= 10 & age <= 14 ~ 3, 
+                               age >= 15 & age <= 19 ~ 4, 
+                               age >= 20 & age <= 24 ~ 5, 
+                               age >= 25 & age <= 29 ~ 6, 
+                               age >= 30 & age <= 34 ~ 7, 
+                               age >= 35 & age <= 39 ~ 8, 
+                               age >= 40 & age <= 44 ~ 9, 
+                               age >= 45 & age <= 49 ~ 10, 
+                               age >= 50 & age <= 54 ~ 11, 
+                               age >= 55 & age <= 59 ~ 12, 
+                               age >= 60 & age <= 64 ~ 13, 
+                               age >= 65 & age <= 69 ~ 14, 
+                               age >= 70 & age <= 74 ~ 15, 
+                               age >= 75 & age <= 79 ~ 16, 
+                               age >= 80 & age <= 84 ~ 17, 
+                               age >= 85 & age <= 89 ~ 18, 
+                               age >= 90 ~ 19)) %>% 
+  group_by(year, hb2018, hb2018_name, hb2014, age_group, sex, sex_name) %>% 
+  summarise(pop = sum(pop)) %>% 
   ungroup() %>% 
-  mutate(AgeGroup = as.integer(AgeGroup)) %>% 
-  select(Year, HB2018, HB2018Name, HB2014, AgeGroup, Sex, SexName, Pop)
+  mutate(age_group = as.integer(age_group)) %>% 
+  select(year, hb2018, hb2018_name, hb2014, age_group, sex, sex_name, pop)
 
-saveRDS(HB_pop_proj_2016_2041_5y, "Lookup Files/R Files/HB2018_pop_proj_5year_agegroups_2016_2041.rds")
+saveRDS(HB_pop_proj_2016_2041_5y, 
+        file.path(lookup_filepath, 
+                  "HB2018_pop_proj_5year_agegroups_2016_2041.rds"))
 
 
 
@@ -308,28 +349,40 @@ saveRDS(HB_pop_proj_2016_2041_5y, "Lookup Files/R Files/HB2018_pop_proj_5year_ag
 ### 5.1 - Create HSCP population projections by single year of age ----
 
 # Read in CA_HSCP Lookup file
-CA_HSCP_Lookup <- read_csv("//Isdsf00d03/cl-out/lookups/Unicode/Geography/HSCP Locality/HSCP Localities_DZ11_Lookup_20180903.csv") %>% 
-  select(CA2018, HSCP2018, HSCP2018Name, HSCP2016) %>% 
-  distinct()
+CA_HSCP_Lookup <- read_csv(paste0("//Isdsf00d03/cl-out/lookups/Unicode/",
+                                  "Geography/HSCP Locality/", 
+                                  "HSCP Localities_DZ11_Lookup_20180903.csv")) %>% 
+  select(CA2018, HSCP2018, HSCP2019Name, HSCP2016) %>% 
+  distinct() %>% 
+  rename(ca2018 = CA2018, 
+         hscp2018 = HSCP2018, 
+         hscp2018_name = HSCP2019Name, 
+         hscp2016 = HSCP2016)
 
 # Get the Council Area population proejction file
 HSCP_pop_proj_2016_2041 <- CA_pop_proj_2016_2041 %>% 
-  arrange(CA2018) %>% 
+  arrange(ca2018) %>% 
   left_join(CA_HSCP_Lookup) %>% 
-  group_by(Year, HSCP2018, HSCP2018Name, HSCP2016, Age, Sex, SexName) %>% 
-  summarise(Pop = sum(Pop)) %>% 
+  group_by(year, hscp2018, hscp2018_name, hscp2016, age, sex, sex_name) %>% 
+  summarise(pop = sum(pop)) %>% 
   ungroup()
 
-saveRDS(HSCP_pop_proj_2016_2041, "Lookup Files/R Files/HSCP2018_pop_proj_2016_2041.rds")
+saveRDS(HSCP_pop_proj_2016_2041, file.path(lookup_filepath, 
+                                           "HSCP2018_pop_proj_2016_2041.rds"))
+
+
 
 ### 5.2 - Create file for 5 year age groups ----
 
 # Get the Council Area population proejction file
+
 HSCP_pop_proj_2016_2041_5y <- CA_pop_proj_2016_2041_5y %>% 
-  arrange(CA2018) %>% 
+  arrange(ca2018) %>% 
   left_join(CA_HSCP_Lookup) %>% 
-  group_by(Year, HSCP2018, HSCP2018Name, HSCP2016, AgeGroup, Sex, SexName) %>% 
-  summarise(Pop = sum(Pop)) %>% 
+  group_by(year, hscp2018, hscp2018_name, hscp2016, age_group, sex, sex_name) %>% 
+  summarise(pop = sum(pop)) %>% 
   ungroup()
 
-saveRDS(HSCP_pop_proj_2016_2041_5y, "Lookup Files/R Files/HSCP2018_pop_proj_5year_agegroups_2016_2041.rds")
+saveRDS(HSCP_pop_proj_2016_2041_5y, 
+        file.path(lookup_filepath, 
+                  "HSCP2018_pop_proj_5year_agegroups_2016_2041.rds"))
