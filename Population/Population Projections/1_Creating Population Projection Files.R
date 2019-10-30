@@ -3,7 +3,7 @@
 # Codename - Create Population Projection Files
 # Original Author - Calum Purdie
 # Original Date - 27/03/2019
-# Updated on
+# Updated - 30/10/2019
 # Type - Creation
 # Written/run on - R Studio Desktop 
 # Version - 3.5.1
@@ -13,10 +13,14 @@
 # install.packages("readxl")
 # install.packages("readr")
 # install.packages("janitor")
+# install.packages("glue")
 #
 # Description - Code for creating ISD files for NRS population projections for 
 # Scotland, Health Board, HSCP and Council Area
 # Approximate run time - 30 seconds
+
+
+# Set filepaths
 
 base_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", 
                            "Referencing & Standards", "GPD", "2_Population", 
@@ -25,11 +29,15 @@ lookup_filepath <- file.path(base_filepath, "Lookup Files", "R Files")
 data_filepath <- file.path(base_filepath, "Source Data")
 
 # Read in packages from library
+
 library(tidyr)
 library(dplyr)
 library(readxl)
 library(readr)
 library(janitor)
+library(glue)
+
+
 
 ### 2 - Create Scotland population projection files ----
 
@@ -93,8 +101,7 @@ scot_pop_proj_2018_2043 <- bind_rows(scot_pop_proj_2018_2043_m,
   mutate(age = as.integer(age))
 
 saveRDS(scot_pop_proj_2018_2043, 
-        file.path(base_filepath, "Lookup Files", "R Files", 
-                  "scot_pop_proj_2018_2043.rds"))
+        glue("{lookup_filepath}/scot_pop_proj_2018_2043.rds"))
 
 
 
@@ -152,8 +159,7 @@ scot_pop_proj_2018_2043_5y <- scot_pop_proj_2018_2043 %>%
   mutate(age_group = as.integer(age_group))
 
 saveRDS(scot_pop_proj_2018_2043_5y, 
-        file.path(base_filepath, "Lookup Files", "R Files", 
-                  "scot_pop_proj_5year_agegroups_2018_2043.rds"))
+        glue("{lookup_filepath}/scot_pop_proj_5year_agegroups_2018_2043.rds"))
 
 
 
@@ -222,7 +228,7 @@ CA_pop_proj_2016_2041 <- bind_rows(CA_proj_2016_2041_m, CA_proj_2016_2041_f) %>%
   mutate(ca2018_name = gsub("&", "and", ca2018_name))
 
 saveRDS(CA_pop_proj_2016_2041, 
-        file.path(lookup_filepath, "CA2018_pop_proj_2016_2041.rds"))
+        glue("{lookup_filepath}/CA2018_pop_proj_2016_2041.rds"))
 
 
 ### 3.4 - Create file for 5 year age groups ----
@@ -261,8 +267,7 @@ CA_pop_proj_2016_2041_5y <- CA_pop_proj_2016_2041 %>%
   select(year, ca2018, ca2018_name, ca2011, age_group, sex, sex_name, pop)
 
 saveRDS(CA_pop_proj_2016_2041_5y, 
-        file.path(lookup_filepath, 
-                  "CA2018_pop_proj_5year_agegroups_2016_2041.rds"))
+        glue("{lookup_filepath}/CA2018_pop_proj_5year_agegroups_2016_2041.rds"))
 
 
 
@@ -300,8 +305,8 @@ HB_pop_proj_2016_2041 <- bind_rows(HB_proj_2016_2041_m, HB_proj_2016_2041_f) %>%
   arrange(year, hb2018, age, sex) %>% 
   mutate(hb2018_name = gsub("&", "and", hb2018_name))
 
-saveRDS(HB_pop_proj_2016_2041, file.path(lookup_filepath, 
-                                         "HB2018_pop_proj_2016_2041.rds"))
+saveRDS(HB_pop_proj_2016_2041, 
+        glue("{lookup_filepath}/HB2018_pop_proj_2016_2041.rds"))
 
 
 ### 4.3 - Create file for 5 year age groups ----
@@ -339,8 +344,7 @@ HB_pop_proj_2016_2041_5y <- HB_pop_proj_2016_2041 %>%
   select(year, hb2018, hb2018_name, hb2014, age_group, sex, sex_name, pop)
 
 saveRDS(HB_pop_proj_2016_2041_5y, 
-        file.path(lookup_filepath, 
-                  "HB2018_pop_proj_5year_agegroups_2016_2041.rds"))
+        glue("{lookup_filepath}/HB2018_pop_proj_5year_agegroups_2016_2041.rds"))
 
 
 
@@ -367,8 +371,8 @@ HSCP_pop_proj_2016_2041 <- CA_pop_proj_2016_2041 %>%
   summarise(pop = sum(pop)) %>% 
   ungroup()
 
-saveRDS(HSCP_pop_proj_2016_2041, file.path(lookup_filepath, 
-                                           "HSCP2018_pop_proj_2016_2041.rds"))
+saveRDS(HSCP_pop_proj_2016_2041, 
+        glue("{lookup_filepath}/HSCP2018_pop_proj_2016_2041.rds"))
 
 
 
@@ -384,5 +388,4 @@ HSCP_pop_proj_2016_2041_5y <- CA_pop_proj_2016_2041_5y %>%
   ungroup()
 
 saveRDS(HSCP_pop_proj_2016_2041_5y, 
-        file.path(lookup_filepath, 
-                  "HSCP2018_pop_proj_5year_agegroups_2016_2041.rds"))
+        glue("{lookup_filepath}/HSCP2018_pop_proj_5year_agegroups_2016_2041.rds"))
