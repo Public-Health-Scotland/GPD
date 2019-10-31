@@ -1,6 +1,6 @@
 ### 1 - Information ----
 
-# Codename - Update Datamart Population Estimates
+# Codename - Update Datamart Population Projections
 # Original Author - Calum Purdie
 # Original Date - 24/10/2019
 # Updated - 31/10/2019
@@ -30,7 +30,7 @@ library(glue)
 
 base_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", 
                            "Referencing & Standards", "GPD", "2_Population")
-lookups_filepath <- file.path(base_filepath, "Population Estimates", 
+lookups_filepath <- file.path(base_filepath, "Population Projections", 
                               "Lookup Files", "R Files")
 templates_filepath <- file.path(base_filepath, "Population Datamart", 
                                 "Creation of Files", "Templates", "R Templates")
@@ -55,56 +55,48 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
     # Reorder columns
     
     data <- readRDS(glue("{lookups_filepath}/{file}")) %>% 
-      filter(Year == i) %>% 
+      filter(year == i) %>% 
       mutate(Population_Name = pop_name) %>% 
-      rename(Gender = Sex, 
-             Age_Band = Age, 
-             Population = Pop) %>% 
+      rename(Year = year, 
+             Gender = sex, 
+             Age_Band = age, 
+             Population = pop) %>% 
       mutate(Location = "", 
              Location_Type = "", 
              Month = "", 
              CHP_Code = "")
     
-    if(file_name == "CA_ESTIMATES"){
+    if(file_name == "SCOTLAND_PROJECTIONS"){
       
       data %<>% 
-        rename(Council_Area_9 = CA2011) %>% 
+        mutate(Data_Zone = "", 
+               Intermediate_Zone = "", 
+               NHS_Board_Code_9 = "",
+               HSCP_Code = "", 
+               Council_Area_9 = "")
+      
+    } else if(file_name == "CA_PROJECTIONS"){
+      
+      data %<>% 
+        rename(Council_Area_9 = ca2011) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                NHS_Board_Code_9 = "",
                HSCP_Code = "")
       
-    } else if(file_name == "HSCP_ESTIMATES"){
+    } else if(file_name == "HSCP_PROJECTIONS"){
       
       data %<>% 
-        rename(HSCP_Code = HSCP2016) %>% 
+        rename(HSCP_Code = hscp2016) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                NHS_Board_Code_9 = "",
                Council_Area_9 = "")
       
-    } else if (file_name == "HBCURRENT_ESTIMATES"){
+    } else if (file_name == "HBCURRENT_PROJECTIONS"){
       
       data %<>% 
-        rename(NHS_Board_Code_9 = HB2014) %>% 
-        mutate(Data_Zone = "", 
-               Intermediate_Zone = "", 
-               Council_Area_9 = "",
-               HSCP_Code = "")
-      
-    } else if (file_name == "HBEVENT_ESTIMATES"){
-      
-      data %<>% 
-        rename(NHS_Board_Code_9 = HB2014) %>% 
-        mutate(Data_Zone = "", 
-               Intermediate_Zone = "", 
-               Council_Area_9 = "",
-               HSCP_Code = "")
-      
-    } else if (file_name == "HBEVENTv2_ESTIMATES"){
-      
-      data %<>% 
-        rename(NHS_Board_Code_9 = HB2014) %>% 
+        rename(NHS_Board_Code_9 = hb2014) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                Council_Area_9 = "",
@@ -123,7 +115,7 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
       mutate_if(is.numeric, as.character)
     
     # Read in correct template
-    # Add on the population estimates
+    # Add on the population PROJECTIONS
     # Update the date contained within the template to the date the code is run
     # Add the year being updated to the Age_Band
     # Remove the Year column
@@ -132,7 +124,7 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
       glue("{templates_filepath}/{template}")) %>% 
       bind_rows(data) %>% 
       mutate(Location = if_else(Population_Name == "POPULATION", date, Location), 
-             Age_Band = if_else(Population_Name == "POPULATION", as.character(i), 
+             Age_Band = if_else(Population_Name == "POPULATION", as.character(i),
                                 Age_Band)) %>% 
       select(-Year)
     
@@ -147,44 +139,35 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
 }
 
 
-### 3 - Council Area ----
 
-datamart_output(start = "1981", end = "2018", 
-                pop_name = "Council Area Population Estimates", 
-                file = "CA2019_pop_est_1981_2018.rds", 
-                file_name = "CA_ESTIMATES", 
-                template = "Template_CA_estimates.rds")
+### 3 - Scotland ----
 
-### 4 - HSCP ----
+datamart_output(start = "2018", end = "2043", 
+                pop_name = "Scotland Population Projections", 
+                file = "scot_pop_proj_2018_2043.rds", 
+                file_name = "SCOTLAND_PROJECTIONS", 
+                template = "Template_scot_projections.rds")
 
-datamart_output(start = "1981", end = "2018", 
-                pop_name = "Health and Social Care Partnership Population Estimates", 
-                file = "HSCP2019_pop_est_1981_2018.rds", 
-                file_name = "HSCP_ESTIMATES", 
-                template = "Template_HSCP_estimates.rds")
+### 4 - Council Area ----
 
-### 5 - Health Board ----
+datamart_output(start = "2016", end = "2041", 
+                pop_name = "Council Area Population Projections", 
+                file = "CA2018_pop_proj_2016_2041.rds", 
+                file_name = "CA_PROJECTIONS", 
+                template = "Template_CA_projections.rds")
 
-### 5.1 - HBCURRENT ----
+### 5 - HSCP ----
 
-datamart_output(start = "1981", end = "2018", 
-                pop_name = "NHS Board Current Population Estimates", 
-                file = "HB2019_pop_est_1981_2018.rds", 
-                file_name = "HBCURRENT_ESTIMATES", 
-                template = "Template_HBcurrent_estimates.rds")
+datamart_output(start = "2016", end = "2041", 
+                pop_name = "Health and Social Care Partnership Population Projections", 
+                file = "HSCP2018_pop_proj_2016_2041.rds", 
+                file_name = "HSCP_PROJECTIONS", 
+                template = "Template_HSCP_projections.rds")
 
-### 5.2 - HBEVENT ----
+### 6 - Health Board Current ----
 
-datamart_output(start = "1981", end = "2018", 
-                pop_name = "NHS Board At Event Population Estimates", 
-                file = "HB2019_pop_est_1981_2018.rds", 
-                file_name = "HBEVENT_ESTIMATES", 
-                template = "Template_HBevent_estimates.rds")
-
-### 5.3 - HBEVENTv2 ----
-
-datamart_output(start = "1981", end = "2018", 
-                pop_name = "NHS Board At Event (excluding Argyll & Clyde) Population Estimates", 
-                file = "HB2019_pop_est_1981_2018.rds", 
-                file_name = "HBEVENTv2_ESTIMATES", 
-                template = "Template_HB2014eventv2_estimates.rds")
+datamart_output(start = "2016", end = "2041", 
+                pop_name = "NHS Board Current Population Projections", 
+                file = "HB2018_pop_proj_2016_2041.rds", 
+                file_name = "HBCURRENT_PROJECTIONS", 
+                template = "Template_HBcurrent_projections.rds")

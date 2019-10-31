@@ -8,6 +8,7 @@
 # Written/run on - R Studio Desktop 
 # Version - 3.5.1
 #
+# install.packages("magrittr")
 # install.packages("tidyr")
 # install.packages("dplyr")
 # install.packages("tidylog")
@@ -18,6 +19,7 @@
 #               Populations Datamart.
 # Approximate run time - <1 second
 
+library("magrittr")
 library(tidyr)
 library(dplyr)
 library(tidylog)
@@ -39,6 +41,15 @@ datamart_filepath <- file.path(base_filepath, "Population Datamart",
 
 date <- strftime(Sys.Date(), format = "%Y%m%d")
 
+# Get CHP2012 column for matching
+
+DZ_CHP <- read_csv(paste0("//Isdsf00d03/cl-out/lookups/Unicode/Geography/", 
+                          "DataZone2011/DataZone2011.csv")) %>% 
+  select(DataZone2011, CHP2012) %>% 
+  rename(Data_Zone = DataZone2011, 
+         CHP_Code = CHP2012)
+  
+
 
 ### 2 - Create Function for Outputs ----
 
@@ -48,29 +59,35 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
     
     # Get most recent population estimates file
     # Filter for required year
+    # Gather data into correct format
+    # Remove the age prefix from all age names
     # Create Population_Name column and rename columns
+    # Match on CHP2012
     # Create blank columns to fit datamart structure
     # Reorder columns
     
     data <- readRDS(glue("{lookups_filepath}/{file}")) %>% 
       filter(year == i) %>% 
       gather(Age_Band, Population, "age0":"age90plus") %>% 
+      mutate(Age_Band = gsub("age", "", Age_Band), 
+             Age_Band = recode(Age_Band, "90plus" = "90")) %>% 
       rename(Year = year, 
              Gender = sex, 
-             Data_Zone = datazone2011) %>% 
+             Data_Zone = datazone2011, 
+             Intermediate_Zone = intzone2011, 
+             NHS_Board_Code_9 = hb2014, 
+             Council_Area_9 = ca2011,
+             HSCP_Code = hscp2016) %>% 
+      left_join(DZ_CHP) %>% 
       mutate(Population_Name = pop_name, 
-             Location = "", 
+             Location_Code = "", 
              Location_Type = "", 
-             Month = "", 
-             CHP_Code = "", 
-             Intermediate_Zone = "", 
-             NHS_Board_Code_9 = "", 
-             Council_Area_9 = "",
-             HSCP_Code = "") %>% 
-      select(Population_Name, Population, Age_Band, Gender, Location, Location_Type, 
+             Month = "") %>% 
+      select(Population_Name, Population, Age_Band, Gender, Location_Code, Location_Type, 
              Data_Zone, Intermediate_Zone, Council_Area_9, NHS_Board_Code_9, Month, 
              CHP_Code, HSCP_Code, Year) %>% 
-      mutate_if(is.numeric, as.character)
+      mutate_if(is.numeric, as.character) %>% 
+      arrange(Data_Zone)
     
     # Read in correct template
     # Add on the population estimates
@@ -81,8 +98,10 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
     output <- readRDS(
       glue("{templates_filepath}/{template}")) %>% 
       bind_rows(data) %>% 
-      mutate(Location = if_else(Population_Name == "POPULATION", date, Location), 
-             Age_Band = if_else(Population_Name == "POPULATION", as.character(i), Age_Band)) %>% 
+      mutate(Location_Code = if_else(Population_Name == "POPULATION", date, 
+                                     Location_Code), 
+             Age_Band = if_else(Population_Name == "POPULATION", as.character(i), 
+                                Age_Band)) %>% 
       select(-Year)
     
     # Save as csv
