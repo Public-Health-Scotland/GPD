@@ -16,7 +16,7 @@
 # install.packages("glue")
 #
 # Description - Code for creating ISD files for NRS population projections for 
-# Scotland, Health Board, HSCP and Council Area
+#               Scotland, Health Board, HSCP and Council Area
 # Approximate run time - 30 seconds
 
 
@@ -63,15 +63,13 @@ scot_pop <- function(filepath, cells, gender){
 
 # Create male population projections
 scot_pop_proj_2018_2043_m <- 
-  scot_pop(filepath = file.path(base_filepath, "Source Data", 
-                                "scot_pop_proj_2018_2043.xlsx"), 
+  scot_pop(filepath = glue("{data_filepath}/scot_pop_proj_2018_2043.xlsx"), 
            cells = "A137:AA264", gender = 1) %>% 
   clean_names()
 
 # Create female population projections
 scot_pop_proj_2018_2043_f <- 
-  scot_pop(filepath = file.path(base_filepath, "Source Data", 
-                                "scot_pop_proj_2018_2043.xlsx"), 
+  scot_pop(filepath = glue("{data_filepath}/scot_pop_proj_2018_2043.xlsx"), 
            cells = "A269:AA396", gender = 2) %>% 
   clean_names()
 
@@ -198,16 +196,14 @@ lower_geo_pop <- function(filepath, cells, gender){
 # Update filepaths for new release
 
 # Create the male population projections
-CA_proj_2016_2041_m <- lower_geo_pop(file.path(data_filepath, "Archive", 
-                                               "2016_2041", 
-                                               "ca_pop_proj_2016_2041.xlsx"), 
+CA_proj_2016_2041_m <- lower_geo_pop(glue("{data_filepath}/Archive/2016_2041/", 
+                                          "ca_pop_proj_2016_2041.xlsx"), 
                                      cells = "A42:CP75", gender = 1) %>% 
   clean_names()
 
 # Create the female population projections
-CA_proj_2016_2041_f <- lower_geo_pop(file.path(data_filepath, "Archive", 
-                                               "2016_2041", 
-                                               "ca_pop_proj_2016_2041.xlsx"), 
+CA_proj_2016_2041_f <- lower_geo_pop(glue("{data_filepath}/Archive/2016_2041",
+                                          "ca_pop_proj_2016_2041.xlsx"), 
                                      cells = "A80:CP113", gender = 2) %>% 
   clean_names()
 
@@ -276,16 +272,14 @@ saveRDS(CA_pop_proj_2016_2041_5y,
 ### 4.1 - Use lower geography population function to read in data ----
 
 # Create the male population projections
-HB_proj_2016_2041_m <- lower_geo_pop(file.path(data_filepath, "Archive", 
-                                               "2016_2041", 
-                                               "hb_pop_proj_2016_2041.xlsx"), 
+HB_proj_2016_2041_m <- lower_geo_pop(glue("{data_filepath}/Archive/2016_2041",
+                                          "hb_pop_proj_2016_2041.xlsx"), 
                                      cells = "A24:CP39", gender = 1) %>% 
   clean_names()
 
 # Create the female population projections
-HB_proj_2016_2041_f <- lower_geo_pop(file.path(data_filepath, "Archive", 
-                                               "2016_2041", 
-                                               "hb_pop_proj_2016_2041.xlsx"), 
+HB_proj_2016_2041_f <- lower_geo_pop(glue("{data_filepath}/Archive/2016_2041", 
+                                          "hb_pop_proj_2016_2041.xlsx"), 
                                      cells = "A44:CP59", gender = 2) %>% 
   clean_names()
 
