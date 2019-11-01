@@ -3,7 +3,7 @@
 # Codename - Update Datamart Population Estimates
 # Original Author - Calum Purdie
 # Original Date - 24/10/2019
-# Updated - 31/10/2019
+# Updated - -01/11/2019
 # Type - Updating files
 # Written/run on - R Studio Desktop 
 # Version - 3.5.1
@@ -14,6 +14,7 @@
 # install.packages("tidylog")
 # install.packages("readr")
 # install.packages("glue")
+# install.packages("xfun")
 #
 # Description - Code for updating population estimates in the 
 #               Populations Datamart.
@@ -25,6 +26,7 @@ library(dplyr)
 library(tidylog)
 library(readr)
 library(glue)
+library(xfun)
 
 # Set filepaths
 
@@ -83,25 +85,9 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
                NHS_Board_Code_9 = "",
                Council_Area_9 = "")
       
-    } else if (file_name == "HBCURRENT_ESTIMATES"){
-      
-      data %<>% 
-        rename(NHS_Board_Code_9 = HB2014) %>% 
-        mutate(Data_Zone = "", 
-               Intermediate_Zone = "", 
-               Council_Area_9 = "",
-               HSCP_Code = "")
-      
-    } else if (file_name == "HBEVENT_ESTIMATES"){
-      
-      data %<>% 
-        rename(NHS_Board_Code_9 = HB2014) %>% 
-        mutate(Data_Zone = "", 
-               Intermediate_Zone = "", 
-               Council_Area_9 = "",
-               HSCP_Code = "")
-      
-    } else if (file_name == "HBEVENTv2_ESTIMATES"){
+    } else if (file_name == "HBCURRENT_ESTIMATES" | 
+               file_name == "HBEVENT_ESTIMATES" | 
+               file_name == "HBEVENTv2_ESTIMATES"){
       
       data %<>% 
         rename(NHS_Board_Code_9 = HB2014) %>% 
@@ -141,6 +127,33 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
     write_csv(output, 
               glue("{datamart_filepath}/POPULATION_{file_name}_{i}_{date}.csv"), 
               col_names = F)
+    
+  }
+  
+  # Due to the format of the datamart files, we need to manually remove several
+  # commas from the first line of each csv file
+  # Use this loop below to remove these commas from each file
+  
+  if(file_name == "CA_ESTIMATES"){
+    
+    gsub_dir(dir = datamart_filepath, pattern = "5824,,,,,,,", 
+             replacement = "5824", recursive = FALSE, ext = "csv")
+    
+  } else if(file_name == "HSCP_ESTIMATES"){
+    
+    gsub_dir(dir = datamart_filepath, pattern = "5642,,,,,,,", 
+             replacement = "5642", recursive = FALSE, ext = "csv")
+    
+  } else if (file_name == "HBCURRENT_ESTIMATES" | 
+             file_name == "HBEVENT_ESTIMATES" | 
+             file_name == "HBEVENTv2_ESTIMATES"){
+    
+    gsub_dir(dir = datamart_filepath, pattern = "2548,,,,,,,", 
+             replacement = "2548", recursive = FALSE, ext = "csv")
+    
+  } else {
+    
+    print("Define a correct file name")
     
   }
   
