@@ -153,9 +153,29 @@ geo_names <- read.csv(file = "https://www.opendata.nhs.scot/dataset/9f942fdb-e59
   mutate_if(is.factor, as.character)
 
 # Join the name columns onto the SPD by DataZone2011
+# As a result of the 2019 boundary change, there are 8 postcodes moving from 
+# Glasgow City to North Lanarkshire
+# We need to manually recode the name columns for these postcodes as matching
+# on by DataZone2011 uses the old geography names, i.e. Lanarkshire codes but
+# Glasgow names
 
 SPD <- SPD %>% 
-  left_join(geo_names)
+  left_join(geo_names) %>%
+  mutate(HB2019Name = if_else(pc7 == "G33 6GS" | pc7 == "G33 6GT" | 
+                              pc7 == "G33 6GU" | pc7 == "G33 6GW" | 
+                              pc7 == "G33 6GX" | pc7 == "G33 6GY" |
+                              pc7 == "G33 6GZ" | pc7 == "G33 6NS", 
+                              "NHS Lanarkshire", HB2019Name), 
+         HSCP2019Name = if_else(pc7 == "G33 6GS" | pc7 == "G33 6GT" | 
+                                pc7 == "G33 6GU" | pc7 == "G33 6GW" | 
+                                pc7 == "G33 6GX" | pc7 == "G33 6GY" |
+                                pc7 == "G33 6GZ" | pc7 == "G33 6NS", 
+                                "North Lanarkshire", HSCP2019Name), 
+         CA2019Name = if_else(pc7 == "G33 6GS" | pc7 == "G33 6GT" | 
+                              pc7 == "G33 6GU" | pc7 == "G33 6GW" | 
+                              pc7 == "G33 6GX" | pc7 == "G33 6GY" |
+                              pc7 == "G33 6GZ" | pc7 == "G33 6NS", 
+                              "North Lanarkshire", CA2019Name))
 
 # Join on UR2 and UR3 columns from postcode lookup
 
