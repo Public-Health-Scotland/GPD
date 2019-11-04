@@ -3,6 +3,7 @@
 # Codename - Update Datamart Small Area Population Estimates
 # Original Author - Calum Purdie
 # Original Date - 31/10/2019
+# Updated - 04/11/2019
 # Updated - 
 # Type - Updating files
 # Written/run on - R Studio Desktop 
@@ -14,17 +15,19 @@
 # install.packages("tidylog")
 # install.packages("readr")
 # install.packages("glue")
+# install.packages("xfun")
 #
 # Description - Code for updating small area population estimates in the 
 #               Populations Datamart.
-# Approximate run time - <1 second
+# Approximate run time - 30 minutes
 
-library("magrittr")
+library(magrittr)
 library(tidyr)
 library(dplyr)
 library(tidylog)
 library(readr)
 library(glue)
+library(xfun)
 
 # Set filepaths
 
@@ -112,13 +115,21 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
     
   }
   
+  # Due to the format of the datamart files, we need to manually remove several
+  # commas from the first line of each csv file
+  # Use this loop below to remove these commas from each file
+  # As this resaves the csv file, this section can take a long time to run
+  
+  gsub_dir(dir = datamart_filepath, pattern = "1269632,,,,,,,", 
+           replacement = "1269632", recursive = FALSE, ext = "csv")
+  
 }
 
 
 ### 3 - Data Zone ----
 
-datamart_output(start = "2011", end = "2018", 
+datamart_output(start = "2018", end = "2018", 
                 pop_name = "Data Zone 2011 Population Estimates", 
                 file = "DataZone2011_pop_est_2011_2018.rds", 
-                file_name = "DATAZONE_ESTIMATES", 
+                file_name = "DATAZONE2011_ESTIMATES", 
                 template = "Template_DZ2011_estimates.rds")
