@@ -10,15 +10,18 @@
 # install.packages("dplyr")
 # install.packages("readr")
 # install.packages("tidylog")
+# install.packages("glue")
 #
 # Description - Code to create Urban Rural Classification lookup files for the 
 #               NHSScotland Open Data platform
 # Approximate run time - <1 second
 
 od_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", "Publications", 
-                         "Open Data (Non Health Topic)", "Data", "OD1800009 - Urban Rural")
-lookups_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", "Referencing & Standards", 
-                              "GPD", "1_Geography", "Urban Rural Classification", "Lookup Files", 
+                         "Open Data (Non Health Topic)", "Data", 
+                         "OD1800009 - Urban Rural")
+lookups_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", 
+                              "Referencing & Standards", "GPD", "1_Geography", 
+                              "Urban Rural Classification", "Lookup Files", 
                               "R Files")
 
 
@@ -27,6 +30,7 @@ lookups_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", "Referencing 
 library(dplyr)
 library(readr)
 library(tidylog)
+library(glue)
 
 
 ### 2 - Data Zone Urban Rural Lookup ----
@@ -35,7 +39,8 @@ library(tidylog)
 # Select the relevant columns - drop the UR name columns
 # Rename columns to fit open data standards
 
-DZ2011_UR_2016 <- readRDS(file.path(lookups_filepath, "DataZone2011_urban_rural_2016.rds")) %>% 
+DZ2011_UR_2016 <- readRDS(glue("{lookups_filepath}/", 
+                               "DataZone2011_urban_rural_2016.rds")) %>% 
   select(DataZone2011, UR2_2016, UR3_2016, UR6_2016, UR8_2016) %>% 
   rename(DZ2011 = DataZone2011, 
          UrbanRural2fold2016 = UR2_2016, 
@@ -46,4 +51,5 @@ DZ2011_UR_2016 <- readRDS(file.path(lookups_filepath, "DataZone2011_urban_rural_
 # Write csv to open data folder
 # Update file name with the date the file is saved
 
-write_csv(DZ2011_UR_2016, file.path(lookups_filepath, "datazone2011_urban_rural_2016_241019.csv"))
+write_csv(DZ2011_UR_2016, 
+          glue("{lookups_filepath}/datazone2011_urban_rural_2016_241019.csv"))

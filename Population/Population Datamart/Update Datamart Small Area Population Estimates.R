@@ -86,9 +86,9 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
              Location_Code = "", 
              Location_Type = "", 
              Month = "") %>% 
-      select(Population_Name, Population, Age_Band, Gender, Location_Code, Location_Type, 
-             Data_Zone, Intermediate_Zone, Council_Area_9, NHS_Board_Code_9, Month, 
-             CHP_Code, HSCP_Code, Year) %>% 
+      select(Population_Name, Population, Age_Band, Gender, Location_Code, 
+             Location_Type, Data_Zone, Intermediate_Zone, Council_Area_9, 
+             NHS_Board_Code_9, Month, CHP_Code, HSCP_Code, Year) %>% 
       mutate_if(is.numeric, as.character) %>% 
       arrange(Data_Zone)
     
@@ -109,8 +109,8 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
     
     # Save as csv
     
-    write_csv(output, 
-              glue("{datamart_filepath}/POPULATION_{file_name}_{i}_{date}.csv"), 
+    write_csv(output,
+              glue("{datamart_filepath}/POPULATION_{file_name}_{i}_{date}.csv"),
               col_names = F)
     
   }
@@ -120,7 +120,7 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
   # Use this loop below to remove these commas from each file
   # As this resaves the csv file, this section can take a long time to run
   
-  gsub_dir(dir = datamart_filepath, pattern = "1269632,,,,,,,", 
+  gsub_dir(dir = datamart_filepath, pattern = "1269632,,,,,,,",
            replacement = "1269632", recursive = FALSE, ext = "csv")
   
 }

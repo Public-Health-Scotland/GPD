@@ -1,34 +1,43 @@
 ### 1 - Information ----
 
-# Codename - Create Council Area Population Estimates Files_all years
+# Codename - Create Council Area Population Estimates Files
 # Data release - Mid-year Council Area Population Estimates
 # Original Author - Tina Fu
 # Original Date - 01/03/2018
-# Type - Preparation
+# Updated - 05/11/2019
+# Type - Creation
 # Written/run on - R Studio Desktop 
-# Version - 3.3.2
+# Version - 3.5.1
 #
+# install.packages("magrittr")
 # install.packages("readxl")
 # install.packages("tidyr")
 # install.packages("dplyr")
 # install.packages("readr")
+# install.packages("tidylog")
+# install.packafes("glue")
 #
-# Description - This document is based on the SPSS syntax for creating Council Area Population Estimates found 
-#               within GPD folders. It is designed to allow for the same data to be inputted and to provide the 
-#               same output files. Each section of the SPSS syntax is contained in this file within different
-#               subsections.
+# Description - Code for creating Council Area population estimates files 
+#               based on mid-year estimates released by NRS
 #
 # Approximate run time - <1 second
 
 # Read in packages from library
+
+library(magrittr)
 library(readxl)
 library(tidyr)
 library(dplyr)
 library(readr)
+library(tidylog)
+library(glue)
 
-# Set working directory to R Code folder
-filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", "Referencing & Standards", "GPD", "2_Population", "Population Estimates")
-data_filepath <- file.path(filepath, "Source Data", "Population_Estimates_2018.xlsx")
+# Set filepaths
+
+filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", 
+                      "Referencing & Standards", "GPD", "2_Population", 
+                      "Population Estimates")
+data_filepath <- file.path(filepath, "Source Data")
 output_filepath <- file.path(filepath, "Lookup Files", "R Files")
 archive_filepath <- file.path(output_filepath, "Archive")
 
@@ -36,65 +45,72 @@ archive_filepath <- file.path(output_filepath, "Archive")
 ### 2 - Import Male and Female Data ----
 
 ### 2.1 - Import Data ----
+
 # Male
 # Remove unnessary columns
-CA_pop_m <- read_excel(data_filepath, sheet = "Table 2", range = "A57:CQ91")
-CA_pop_tidy_m <- CA_pop_m %>% 
-  select(-'...4', -`All Ages`) %>% 
-  filter(Area1 != "Council areas", Area1 != "Scotland")
-
 # Transpose the dataset
-male <- CA_pop_tidy_m %>% 
+
+male <- read_excel(glue("{data_filepath}/Population_Estimates_2018.xlsx"), 
+                       sheet = "Table 2", range = "A57:CQ91") %>% 
+  select(-c('...4', `All Ages`)) %>% 
+  filter(Area1 != "Council areas", Area1 != "Scotland") %>% 
   gather(Age, Pop, `0`:`90+`) %>% 
   mutate(Sex = 1)
 
 # Female
 # Remove unnessary columns
-CA_pop_f <- read_excel(data_filepath, sheet = "Table 2", range = "A110:CQ144")
-CA_pop_tidy_f <- CA_pop_f %>% 
-  select(-'...4', -`All Ages`) %>%
-  filter(Area1 != "Council areas", Area1 != "Scotland")
-
 # Transpose the dataset
-female <- CA_pop_tidy_f %>% 
+
+female <- read_excel(glue("{data_filepath}/Population_Estimates_2018.xlsx"), 
+                       sheet = "Table 2", range = "A110:CQ144") %>% 
+  select(-'...4', -`All Ages`) %>%
+  filter(Area1 != "Council areas", Area1 != "Scotland") %>% 
   gather(Age, Pop, `0`:`90+`) %>% 
   mutate(Sex = 2)
+
+
 
 ### 2.2 - Add Male and Female Files Together ----
 
 # Add male and female together
-mandf <- rbind(male, female) %>% 
-  mutate(Year = 2018)
+# Change age of "90+" to "90" and make it as numeric rather than character
 
-#Change age of "90+" to "90" and make it as numeric rather than character
-mandf <- mandf %>% 
-  mutate(Age = ifelse(Age == "90+", "90", Age)) %>% 
+mandf <- bind_rows(male, female) %>% 
+  mutate(Year = 2018) %>% 
+  mutate(Age = case_when(Age == "90+" ~ "90")) %>% 
   mutate(Age = as.numeric(Age))
 
 
 
-### 3 - Attach CA2018 Code and Create 2017 Population Estimate Files ----
+### 3 - Create File for Latest Year ----
 
-### 3.1 - Attach CA2018 Code and Create 2017 Single Year File ----
-# Attach CA2018 code and CA2011 code
-# Recode the Area column into the CA2018 GSS codes
-# Use the CA2018 column to get CA2011
+### 3.1 - Attach CA2019 Code and Create Single Year File ----
+
+# Attach CA2019 code and CA2011 code by renaming CA2018
+# Rename Area1 to CA2019Name and create a SexName column
 # Sort the dataframe and then select the relevant variables
+
 CA2019_pop_est_2018 <- mandf %>% 
   rename(CA2018 = `Area code`) %>% 
-  mutate(CA2019 = recode(CA2018, 'S12000046' = 'S12000049', 'S12000044' = 'S12000050')) %>% 
-  mutate(CA2011 = recode(CA2018, 'S12000047' = 'S12000015', 'S12000048' = 'S12000024')) %>%
+  mutate(CA2019 = recode(CA2018, 
+                         'S12000046' = 'S12000049', 
+                         'S12000044' = 'S12000050')) %>% 
+  mutate(CA2011 = recode(CA2018, 
+                         'S12000047' = 'S12000015', 
+                         'S12000048' = 'S12000024')) %>%
   rename(CA2019Name = Area1) %>%
   mutate(SexName = recode(Sex, '1' = 'M', '2' = 'F')) %>%
   arrange(Year, CA2019, Age, Sex) %>% 
   select(Year, CA2019, CA2019Name, CA2018, CA2011, Age, Sex, SexName, Pop)
 
-### 3.2 - Create 5 Year Age Group File ----
-# Create a file for 5 year age groups and sex
-CA2019_pop_est_5year_agegroups_2018 <- CA2019_pop_est_2018
 
+
+### 3.2 - Create 5 Year Age Group File ----
+
+# Create a file for 5 year age groups and sex
 # Assign a 5 year age group to each age
-CA2019_pop_est_5year_agegroups_2018 <- CA2019_pop_est_5year_agegroups_2018 %>%
+
+CA2019_pop_est_5y_2018 <- CA2019_pop_est_2018 %>% 
   mutate(AgeGroup = case_when(Age == 0 ~ 0, 
                               Age >= 1 & Age <= 4 ~ 1, 
                               Age >= 5 & Age <= 9 ~ 2, 
@@ -137,51 +153,77 @@ CA2019_pop_est_5year_agegroups_2018 <- CA2019_pop_est_5year_agegroups_2018 %>%
                                   AgeGroup == 19 ~ "90+"))
 
 # Aggregate the dataset into 5 year age group and sex
-# Group by Year, CA2018, CA2011, AgeGroup and Sex to get population totals for each level within this
+# Group by Year, CA2018, CA2011, AgeGroup and Sex to get population totals for 
+# each level within this
 # Ungroup the data and select the relevant variables
-CA2019_pop_est_5year_agegroups_2018 <- CA2019_pop_est_5year_agegroups_2018 %>% 
-  group_by(Year, CA2019, CA2019Name, CA2018, CA2011, AgeGroup, AgeGroupName, Sex, SexName) %>% 
+
+CA2019_pop_est_5y_2018 %<>%
+  group_by(Year, CA2019, CA2019Name, CA2018, CA2011, AgeGroup, AgeGroupName, 
+           Sex, SexName) %>% 
   summarise(Pop = sum(Pop)) %>%
   ungroup() %>%
-  select(Year, CA2019, CA2019Name, CA2018, CA2011, AgeGroup, AgeGroupName, Sex, SexName, Pop)
+  select(Year, CA2019, CA2019Name, CA2018, CA2011, AgeGroup, AgeGroupName, 
+         Sex, SexName, Pop)
+
 
 
 ### 4 - Update Historical Files For New Release ----
 
 ### 4.1 - Update Single Year File ----
-# Read in latest historical release files (1981-2016)
-CA2018_pop_est_1981_2017 <- readRDS(paste0(archive_filepath, "CA2018_pop_est_1981_2017.rds"))
+
+# Read in latest historical release files
+
+CA2018_pop_est_1981_2017 <- readRDS(glue("{archive_filepath}/", 
+                                         "CA2018_pop_est_1981_2017.rds"))
 
 # Set year on new file as a character for matching
-CA2019_pop_est_2018$Year <- as.character(CA2019_pop_est_2018$Year)
 
-# CA2018_pop_est_1981_2017 does not contain information about CA2019 so need to add this before matching
+CA2019_pop_est_2018 %<>% mutate(Year = as.character(Year))
+
+# CA2018_pop_est_1981_2017 does not contain information about CA2019 so need to 
+# add this before matching
 # THIS IS ONLY REQUIRED FOR 2018 ESTIMATES
-CA2018_pop_est_1981_2017 <- CA2018_pop_est_1981_2017 %>% 
+
+CA2018_pop_est_1981_2017 %<>%
   mutate(CA2019Name = CA2018Name, 
-         CA2019 = recode(CA2018, 'S12000046' = 'S12000049', 'S12000044' = 'S12000050'))
+         CA2019 = recode(CA2018, 
+                         'S12000046' = 'S12000049', 
+                         'S12000044' = 'S12000050'))
 
 # Add the latest release to single year file
+
 CA2019_pop_est_1981_2018 <- CA2019_pop_est_2018 %>%
   full_join(CA2018_pop_est_1981_2017) %>% 
   select(-CA2018Name) %>% 
   arrange(Year, CA2019, Age, Sex)
 
 # Save as .RDS file
-saveRDS(CA2019_pop_est_1981_2018, paste0(output_filepath, "CA2019_pop_est_1981_2018.rds"))
+
+saveRDS(CA2019_pop_est_1981_2018, 
+        glue("{output_filepath}/CA2019_pop_est_1981_2018.rds"))
+
+
 
 ### 4.2 - Update 5 Year Age Group File ----
-# Read in latest historical release files (1981-2016)
-CA2018_pop_est_5year_agegroups_1981_2017 <- readRDS(paste0(archive_filepath, "CA2018_pop_est_5year_agegroups_1981_2017.rds"))
+
+# Read in latest historical release files
+
+CA2018_pop_est_5y_1981_2017 <- readRDS(
+  glue("{archive_filepath}/CA2018_pop_est_5year_agegroups_1981_2017.rds"))
 
 # Set year as character for matching
-CA2019_pop_est_5year_agegroups_2018$Year <- as.character(CA2019_pop_est_5year_agegroups_2018$Year)
 
-# CA2018_pop_est_5year_agegroups_1981_2017 does not contain information about CA2019 so need to add this before matching
+CA2019_pop_est_5y_2018 %<>% mutate(Year = as.character(Year))
+
+# CA2018_pop_est_5year_agegroups_1981_2017 does not contain information about 
+# CA2019 so need to add this before matching
 # THIS IS ONLY REQUIRED FOR 2018 ESTIMATES
-CA2018_pop_est_5year_agegroups_1981_2017 <- CA2018_pop_est_5year_agegroups_1981_2017 %>% 
+
+CA2018_pop_est_5y_1981_2017 %<>% 
   mutate(CA2019Name = CA2018Name, 
-         CA2019 = recode(CA2018, 'S12000046' = 'S12000049', 'S12000044' = 'S12000050'), 
+         CA2019 = recode(CA2018, 
+                         'S12000046' = 'S12000049', 
+                         'S12000044' = 'S12000050'), 
          AgeGroupName = case_when(AgeGroup == 0 ~ "0", 
                                   AgeGroup == 1 ~ "1-4", 
                                   AgeGroup == 2 ~ "5-9", 
@@ -204,106 +246,91 @@ CA2018_pop_est_5year_agegroups_1981_2017 <- CA2018_pop_est_5year_agegroups_1981_
                                   AgeGroup == 19 ~ "90+"))
 
 # Add the latest release to 5 year age group file
-CA2019_pop_est_5year_agegroups_1981_2018 <- CA2019_pop_est_5year_agegroups_2018 %>%
-  full_join(CA2018_pop_est_5year_agegroups_1981_2017) %>% 
+
+CA2019_pop_est_5year_agegroups_1981_2018 <- CA2019_pop_est_5y_2018 %>%
+  full_join(CA2018_pop_est_5y_1981_2017) %>% 
   select(-CA2018Name) %>% 
   arrange(Year, CA2019, AgeGroup, Sex)
 
 # Save as .RDS file
-saveRDS(CA2019_pop_est_5year_agegroups_1981_2018, paste0(output_filepath, "CA2019_pop_est_5year_agegroups_1981_2018.rds"))
+
+saveRDS(CA2019_pop_est_5year_agegroups_1981_2018, 
+        glue("{output_filepath}/CA2019_pop_est_5year_agegroups_1981_2018.rds"))
 
 
 
-### 5 - Check CA2018 files ----
+### 5 - Check files ----
 
-### 5.1 - Check single age file ----
+### 5.1 - Check function ----
 
-# Check that all years of the population estimates are there (last update 1982-2017)
-# Check that there are no missing values
-# Check all years have the same % of records
-as.data.frame(table(CA2019_pop_est_1981_2018$Year))
+checks <- function(input, age_column){
+  
+  # Check that all years of the population estimates are there (last update 1982-2017)
+  # Check that there are no missing values
+  # Check all years have the same % of records
+  
+  input %>% group_by(Year) %>% count() %>% print(n = Inf)
+  
+  # Check that all 32 Council Areas are there
+  # Check there are no missing values
+  # Check all CAs have the same % of records
+  
+  input %>% group_by(CA2019) %>% count() %>% print(n = Inf)
+  input %>% group_by(CA2018) %>% count() %>% print(n = Inf)
+  input %>% group_by(CA2011) %>% count() %>% print(n = Inf)
+  
+  # Check that all 91 ages 0 to 90+ are there
+  # Check there are no missing values
+  # Check all ages have the same % of records
+  
+  input %>% group_by({{age_column}}) %>% count() %>% print(n = Inf)
+  
+  # Check that both males and females are there
+  # Check there are no missing values
+  # Check both sexes have the same % of records (50/50)
+  
+  input %>% group_by(Sex) %>% count() %>% print(n = Inf)
+  
+  # Check that the population values are as expected
+  # i.e. no negative values or extremely high values etc
+  
+  input %>%
+    group_by(Pop) %>%
+    count() %>%
+    arrange(n) %>%
+    filter(n <= 0 | n >= 300)
+  
+  # Select only the new year(s) of data
+  
+  new_years <- input %>%
+    filter(Year > 2011)
+  # 
+  # Check Council Area totals against NRS source data
+  
+  new_years %<>%
+    group_by(Year, CA2018) %>%
+    summarise(Pop = sum(Pop)) %>%
+    ungroup()
+  
+  View(new_years)
+  
+  # Check Scotland totals against NRS source data
+  
+  new_years %>%
+    group_by(Year) %>%
+    summarise(Pop = sum(Pop)) %>%
+    ungroup()
+  
+}
 
-# Check that all 32 Council Areas are there
-# Check there are no missing values
-# Check all CAs have the same % of records
-as.data.frame(table(CA2019_pop_est_1981_2018$CA2018))
-as.data.frame(table(CA2019_pop_est_1981_2018$CA2011))
 
-# Check that all 91 ages 0 to 90+ are there
-# Check there are no missing values
-# Check all ages have the same % of records
-as.data.frame(table(CA2019_pop_est_1981_2018$Age))
 
-# Check that both males and females are there
-# Check there are no missing values
-# Check both sexes have the same % of records (50/50)
-as.data.frame(table(CA2019_pop_est_1981_2018$Sex))
+### 5.2 - Check single age file ----
 
-# Check that the population values are as expected
-# i.e. no negative values or extremely high values etc
-pop_test <- as.data.frame(table(CA2019_pop_est_1981_2018$Pop))
-View(pop_test)
+checks(input = CA2019_pop_est_1981_2018, age_column = "Age")
 
-# Select only the new year(s) of data
-CA2018_new <- CA2019_pop_est_1981_2018 %>%
-  filter(Year > 2011)
 
-# Check Council Area totals against NRS source data
-CA2018_new <- CA2018_new %>%
-  group_by(Year, CA2018) %>%
-  summarise(Pop = sum(Pop)) %>%
-  ungroup()
-View(CA2018_new)
+### 5.3 - Check 5 year age group file ----
 
-# Check Scotland totals against NRS source data
-CA2018_new %>%
-  group_by(Year) %>%
-  summarise(Pop = sum(Pop)) %>%
-  ungroup()
-
-### 5.2 - Check 5 year age group file ----
-
-# Check that all years of the populatione stimates are there (last update 1982-2017)
-# Check that there are no missing values
-# Check all CAs have the same % of records
-as.data.frame(table(CA2019_pop_est_5year_agegroups_1981_2018$Year))
-
-# Check that all 32 Council Areas are there
-# Check there are no missing values
-# Check all CAs have the same % of records
-as.data.frame(table(CA2019_pop_est_5year_agegroups_1981_2018$CA2019))
-as.data.frame(table(CA2019_pop_est_5year_agegroups_1981_2018$CA2018))
-as.data.frame(table(CA2019_pop_est_5year_agegroups_1981_2018$CA2011))
-
-# Check that all 20 age groups are there
-# Check there are no missing values
-# Check all ages have the same % of records
-as.data.frame(table(CA2019_pop_est_5year_agegroups_1981_2018$AgeGroup))
-
-# Check that both males and females are there
-# Check there are no missing values
-# Check both sexes have the same % of records (50% each)
-as.data.frame(table(CA2019_pop_est_5year_agegroups_1981_2018$Sex))
-
-# Check that population values are as expected
-# i.e. no negative values or extremely high values
-pop_test <- as.data.frame(table(CA2019_pop_est_5year_agegroups_1981_2018$Pop))
-View(pop_test)
-
-# Select only the new year(s) of data
-CA2019_5y_new <- CA2019_pop_est_5year_agegroups_1981_2018 %>%
-  filter(Year > 2011) 
-
-# Check Council Area totals against NRS source data
-CA2019_5y_new <- CA2019_5y_new %>%
-  group_by(Year, CA2019) %>%
-  summarise(Pop = sum(Pop)) %>%
-  ungroup()
-View(CA2019_5y_new)
-
-# Check Scotland totals against NRS source data
-CA2019_5y_new %>% 
-  group_by(Year) %>% 
-  summarise(Pop = sum(Pop)) %>% 
-  ungroup()
-
+checks(input = CA2019_pop_est_5year_agegroups_1981_2018, 
+       age_column = "AgeGroup")
