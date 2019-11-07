@@ -4,7 +4,7 @@
 # Data release - Scottish Postcode Directory
 # Original Author - Calum Purdie
 # Original Date - 07/08/2018
-# Updated - 04/11/2019
+# Updated - 06/11/2019
 # Type - Preparation
 # Written/run on - R Studio Desktop 
 # Version - 3.5.1
@@ -17,6 +17,7 @@
 # install.packages("readxl")
 # install.packages("tidylog")
 # install.packages("glue")
+# install.packages("here")
 #
 # Description - Code for creating ISD version of the Scottish Postcode Directory
 #
@@ -33,6 +34,7 @@ library(stringr)
 library(readxl)
 library(tidylog)
 library(glue)
+library(here)
 
 # Update filepaths for new version
 
@@ -164,18 +166,10 @@ SPD %<>%
 # IntZone2011Name
 
 # Use the Geography Codes and Names open data file to get the names
-# read_csv producing a timeout error when Calum tried to run it so best 
-# using read.csv
+# Source this from the "Run API Query for Geography Names.R" script
 
-geo_names <- read.csv(paste0("https://www.opendata.nhs.scot/dataset/", 
-                             "9f942fdb-e59e-44f5-b534-d6e17229cc7b/resource/", 
-                             "395476ab-0720-4740-be07-ff4467141352/download/", 
-                             "geography_codes_and_labels_dz2011_01042019.csv")) %>% 
-  select(DZ2011, DZ2011Name, IZ2011Name, CA2011Name, HSCP2016Name, HB2014Name) %>% 
-  rename(DataZone2011 = DZ2011, DataZone2011Name = DZ2011Name, 
-         IntZone2011Name = IZ2011Name, CA2019Name = CA2011Name, 
-         HSCP2019Name = HSCP2016Name, HB2019Name = HB2014Name) %>% 
-  mutate_if(is.factor, as.character)
+source(here("Geography", "Scottish Postcode Directory", 
+            "Run API Query for Geography Names.R"))
 
 # Join the name columns onto the SPD by DataZone2011
 # As a result of the 2019 boundary change, there are 8 postcodes moving from 

@@ -18,6 +18,7 @@
 # install.packages("janitor")
 # install.packages("tidylog")
 # install.packages("glue")
+# install.packages("fs")
 #
 # Description - Code for comparing R and SPSS files for 
 #               Scottish Postcode Directory
@@ -42,6 +43,9 @@ library(sjlabelled)
 library(janitor)
 library(tidylog)
 library(glue)
+library(fs)
+
+
 
 ### 2 - Reading in files ----
 
@@ -50,8 +54,8 @@ library(glue)
 # Haven reads in SPSS strings as factors
 # Convert all factors to characters in the SPSS file
 
-SPD_SPSS <- read_sav(glue("{SPSS_filepath}/Scottish_Postcode_Directory_2019_2.sav"), 
-                     user_na=F) %>%
+SPD_SPSS <- dir_ls(glue("{SPSS_filepath}/"), regexp = ".sav$") %>%
+  read_sav(user_na = F) %>% 
   arrange(pc7) %>%
   zap_formats() %>%
   zap_widths() %>%
@@ -60,7 +64,8 @@ SPD_SPSS <- read_sav(glue("{SPSS_filepath}/Scottish_Postcode_Directory_2019_2.sa
 
 # Read in R file and sort by pc7
 
-SPD_R <- readRDS(glue("{R_filepath}/Scottish_Postcode_Directory_2019_2.rds")) %>% 
+SPD_R <- dir_ls(glue("{R_filepath}/"), regexp = ".rds$") %>%
+  readRDS() %>% 
   arrange(pc7) %>% 
   select(-c(HB2019Name, HSCP2019Name, CA2019Name, IntZone2011Name, 
             DataZone2011Name, UR2_2016_name, UR3_2016_name, UR6_2016_name, 
@@ -78,36 +83,30 @@ SPD_R <- readRDS(glue("{R_filepath}/Scottish_Postcode_Directory_2019_2.rds")) %>
 # Round Latitude and Longitude columns to 9 decimal places using the round2 
 # function (the base R round() function does not work)
 
+# Change some SPSS columns to numeric to match with R
+# Set all blank cells as NA in SPSS file
+
 SPD_SPSS %<>% 
   mutate(Latitude = round_half_up(Latitude, 9), 
          Longitude = round_half_up(Longitude, 9))
 
-# Change some SPSS columns to numeric to match with R
 
 SPD_SPSS %<>% 
   mutate(Grid_Reference_Easting = as.numeric(Grid_Reference_Easting), 
          Grid_Reference_Northing = as.numeric(Grid_Reference_Northing), 
          LGD_1995 = as.numeric(LGD_1995), 
-         LGD_1991 = as.numeric(LGD_1991))
+         LGD_1991 = as.numeric(LGD_1991)) %>% 
+  mutate_if(is.character, list(~na_if(., "")))
 
-# Set all blank cells as NA in SPSS file
-
-cols <- sapply(SPD_SPSS, class) != 'Date'
-
-SPD_SPSS[cols] <- lapply(SPD_SPSS[cols],  
-                         function(x) replace(x, which(x==''), NA))
 
 # Set all blank cells as NA in R file
-
-cols <- sapply(SPD_R, class) != 'Date'
-
-SPD_R[cols] <- lapply(SPD_R[cols],  function(x) replace(x, which(x==''), NA))
-
 # Set all integer columns as numeric in R file
 
-cols <- sapply(SPD_R, class) == 'integer'
+SPD_R %<>%
+  mutate_if(is.character, list(~na_if(., ""))) %>% 
+  mutate_if(is.integer, as.numeric)
 
-SPD_R[cols] <- lapply(SPD_R[cols],  as.numeric)
+
 
 ### 4 - Compare datasets ----
 

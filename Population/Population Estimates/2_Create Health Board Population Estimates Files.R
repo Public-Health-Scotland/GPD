@@ -92,8 +92,12 @@ mandf <- rbind(male, female) %>%
 # Sort the dataframe and then select the relevant variables
 
 HB2019_pop_est_2018 <- mandf %>% 
-  mutate(HB2019 = recode(HB2018, 'S08000021' = 'S08000031', 'S08000023' = 'S08000032'),
-         HB2014 = recode(HB2018, 'S08000029' = 'S08000018', 'S08000030' = 'S08000027')) %>%
+  mutate(HB2019 = recode(HB2018, 
+                         'S08000021' = 'S08000031', 
+                         'S08000023' = 'S08000032'),
+         HB2014 = recode(HB2018, 
+                         'S08000029' = 'S08000018', 
+                         'S08000030' = 'S08000027')) %>%
   mutate(SexName = recode(Sex, '1' = 'M', '2' = 'F')) %>%
   arrange(Year, HB2019, Age, Sex) %>% 
   select(Year, HB2019, HB2019Name, HB2018, HB2014, Age, Sex, SexName, Pop)
@@ -265,7 +269,8 @@ saveRDS(HB2019_pop_est_5year_agegroups_1981_2018,
 
 checks <- function(input, age_column){
   
-  # Check that all years of the population estimates are there (last update 1982-2017)
+  # Check that all years of the population estimates are there 
+  # (last update 1982-2017)
   # Check that there are no missing values
   # Check all years have the same % of records
   
