@@ -5,6 +5,8 @@
 
 data/
 
+Geography/Scottish Postcode Directory/Run API Query for Geography Names.R
+
 # Common text files that may contain data #
 *.[cC][sS][vV]
 *.[tT][xX][tT]
