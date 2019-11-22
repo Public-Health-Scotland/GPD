@@ -7,6 +7,7 @@ library(glue)
 library(fs)
 library(readxl)
 library(janitor)
+library(lubridate)
 
 base_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", 
                            "Referencing & Standards", "GPD", "1_Geography", 
@@ -46,11 +47,9 @@ SPD %<>% set_colnames(renamed_columns)
 # Reformat dates to DD/MM/YYYY H:M:S
 
 SPD %<>% 
-  mutate(Date_Of_Introduction = format(as.Date(Date_Of_Introduction, 
-                                               format = "%d.%m.%Y"), 
+  mutate(Date_Of_Introduction = format(dmy(Date_Of_Introduction), 
                                        "%d/%m/%Y %H:%M:%S"), 
-         Date_Of_Deletion = format(as.Date(Date_Of_Deletion, 
-                                           format = "%d.%m.%Y"), 
+         Date_Of_Deletion = format(dmy(Date_Of_Deletion), 
                                    "%d/%m/%Y %H:%M:%S"))
 
 
