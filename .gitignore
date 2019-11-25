@@ -5,7 +5,7 @@
 
 data/
 
-Geography/Scottish Postcode Directory/Run API Query for Geography Names.R
+Geography/Scottish Postcode Directory/Set httr configuration for API.R
 
 # Common text files that may contain data #
 *.[cC][sS][vV]
