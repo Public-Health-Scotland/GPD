@@ -35,6 +35,8 @@ library(readxl)
 library(tidylog)
 library(glue)
 library(here)
+library(data.table)
+library(ckanr)
 
 # Update filepaths for new version
 
@@ -58,7 +60,7 @@ options(digits = 15)
 # Import Scottish Postcode Directory
 # Rename variables
 
-SPD <- read.csv(glue("{data_filepath}/SingleRecord.csv"), 
+SPD <- fread(glue("{data_filepath}/SingleRecord.csv"), 
                 stringsAsFactors = F) %>% 
   rename(pc8 = Postcode, 
          SplitChar = SplitChar, 
@@ -156,45 +158,10 @@ SPD %<>%
 # Create 7 character postcode variable
 
 SPD %<>% 
-  mutate(pc7 = ifelse(nchar(pc8) == 6, gsub(" ","  ",pc8),
-               ifelse(nchar(pc8) == 7, pc8,
-               ifelse(nchar(pc8) == 8, gsub(" ", "", pc8), NA)))) %>%
+  mutate(pc7 = case_when(nchar(pc8) == 6 ~ gsub(" ","  ",pc8), 
+                         nchar(pc8) == 7 ~ pc8,
+                         nchar(pc8) == 8 ~ gsub(" ", "", pc8))) %>%
   arrange(pc7, desc(Date_Of_Introduction), Date_Of_Deletion)
-
-
-# Add columns for HB2019Name, HSCP2019Name, CA2019Name, DataZone2011Name and 
-# IntZone2011Name
-
-# Use the Geography Codes and Names open data file to get the names
-# Source this from the "Run API Query for Geography Names.R" script
-
-source(here("Geography", "Scottish Postcode Directory", 
-            "Run API Query for Geography Names.R"))
-
-# Join the name columns onto the SPD by DataZone2011
-# As a result of the 2019 boundary change, there are 8 postcodes moving from 
-# Glasgow City to North Lanarkshire
-# We need to manually recode the name columns for these postcodes as matching
-# on by DataZone2011 uses the old geography names, i.e. Lanarkshire codes but
-# Glasgow names
-
-SPD %<>%
-  left_join(geo_names) %>%
-  mutate(HB2019Name = if_else(pc7 == "G33 6GS" | pc7 == "G33 6GT" | 
-                              pc7 == "G33 6GU" | pc7 == "G33 6GW" | 
-                              pc7 == "G33 6GX" | pc7 == "G33 6GY" |
-                              pc7 == "G33 6GZ" | pc7 == "G33 6NS", 
-                              "NHS Lanarkshire", HB2019Name), 
-         HSCP2019Name = if_else(pc7 == "G33 6GS" | pc7 == "G33 6GT" | 
-                                pc7 == "G33 6GU" | pc7 == "G33 6GW" | 
-                                pc7 == "G33 6GX" | pc7 == "G33 6GY" |
-                                pc7 == "G33 6GZ" | pc7 == "G33 6NS", 
-                                "North Lanarkshire", HSCP2019Name), 
-         CA2019Name = if_else(pc7 == "G33 6GS" | pc7 == "G33 6GT" | 
-                              pc7 == "G33 6GU" | pc7 == "G33 6GW" | 
-                              pc7 == "G33 6GX" | pc7 == "G33 6GY" |
-                              pc7 == "G33 6GZ" | pc7 == "G33 6NS", 
-                              "North Lanarkshire", CA2019Name))
 
 # Join on UR2 and UR3 columns from postcode lookup
 
@@ -229,7 +196,58 @@ SPD %<>%
 
 
 
-### 4 - Check Data ----
+### 4 - Use Open Data API for Column Names ----
+
+# Add columns for HB2019Name, HSCP2019Name, CA2019Name, DataZone2011Name and 
+# IntZone2011Name
+
+# Use the Geography Codes and Names open data file to get the names
+# First need to run the httr configuration script
+
+source(here("Geography", "Scottish Postcode Directory", 
+                  "Set httr configuration for API.R"))
+
+# Set url and id
+
+ckan <- src_ckan("https://www.opendata.nhs.scot")
+res_id <- "395476ab-0720-4740-be07-ff4467141352"
+
+geo_names <- dplyr::tbl(src = ckan$con, from = res_id) %>% 
+  select(DZ2011, DZ2011Name, IZ2011Name, CA2011Name, HSCP2016Name, 
+         HB2014Name) %>% 
+  rename(DataZone2011 = DZ2011, DataZone2011Name = DZ2011Name, 
+         IntZone2011Name = IZ2011Name, CA2019Name = CA2011Name, 
+         HSCP2019Name = HSCP2016Name, HB2019Name = HB2014Name) %>%  
+  as_tibble()
+
+# Join the name columns onto the SPD by DataZone2011
+# As a result of the 2019 boundary change, there are 8 postcodes moving from 
+# Glasgow City to North Lanarkshire
+# We need to manually recode the name columns for these postcodes as matching
+# on by DataZone2011 uses the old geography names, i.e. Lanarkshire codes but
+# Glasgow names
+
+SPD %<>%
+  left_join(geo_names) %>%
+  mutate(HB2019Name = if_else(pc7 == "G33 6GS" | pc7 == "G33 6GT" | 
+                              pc7 == "G33 6GU" | pc7 == "G33 6GW" | 
+                              pc7 == "G33 6GX" | pc7 == "G33 6GY" |
+                              pc7 == "G33 6GZ" | pc7 == "G33 6NS", 
+                              "NHS Lanarkshire", HB2019Name), 
+         HSCP2019Name = if_else(pc7 == "G33 6GS" | pc7 == "G33 6GT" | 
+                                pc7 == "G33 6GU" | pc7 == "G33 6GW" | 
+                                pc7 == "G33 6GX" | pc7 == "G33 6GY" |
+                                pc7 == "G33 6GZ" | pc7 == "G33 6NS", 
+                                "North Lanarkshire", HSCP2019Name), 
+         CA2019Name = if_else(pc7 == "G33 6GS" | pc7 == "G33 6GT" | 
+                              pc7 == "G33 6GU" | pc7 == "G33 6GW" | 
+                              pc7 == "G33 6GX" | pc7 == "G33 6GY" |
+                              pc7 == "G33 6GZ" | pc7 == "G33 6NS", 
+                              "North Lanarkshire", CA2019Name))
+
+
+
+### 5 - Check Data ----
 
 # Select distinct rows (i.e. ensure there are no duplicates)
 # If total number of rows changes then there were duplicates in the 
