@@ -44,46 +44,39 @@ pc_simd_metadata <- "SIMD2016_pc"
 
 
 
-### 2 posctode_all_simd_carstairs ----
+### 2 Function ----
 
-# Read in spss data
-
-pc_all <- read_spss(glue("{lookups_filepath}/{pc_all_file}.sav"))
-
-# Use purrr to get variable labels
-
-pc_all_desc <- map(pc_all, ~ attributes(.)[["label"]]) %>% 
-  map_chr(~ if_else(is.null(.), NA_character_, .))
-
-# Create tibble with variable and description columns
-
-pc_all_desc_df <- tibble(variable = names(pc_all), 
-                         variable_description = pc_all_desc)
-
-# Save to metadata folder
-
-write_xlsx(pc_all_desc_df, glue("{metadata_filepath}/{pc_all_metadata}.xlsx"))
-
-
-
-### 3 postcode_simd ----
-
-# Read in spss data
-
-pc_simd <- read_spss(glue("{lookups_filepath}/{pc_simd_file}.sav"))
-
-# Use purrr to get variable labels
-
-pc_simd_desc <- map(pc_simd, ~ attributes(.)[["label"]]) %>% 
-  map_chr(~ if_else(is.null(.), NA_character_, .))
-
-# Create tibble with variable and description columns
-
-pc_simd_desc_df <- tibble(variable = names(pc_simd), 
-                          variable_description = pc_simd_desc)
-
-# Save to metadata folder
-
-write_xlsx(pc_simd_desc_df, glue("{metadata_filepath}/{pc_simd_metadata}.xlsx"))
+metadata <- function(input, output){
+  
+  # Read in spss data
+  
+  data <- read_spss(glue("{lookups_filepath}/{input}.sav"))
+  
+  # Use purrr to get variable labels
+  
+  data_desc <- map(data, ~ attributes(.)[["label"]]) %>% 
+    map_chr(~ if_else(is.null(.), NA_character_, .))
+  
+  # Create tibble with variable and description columns
+  
+  data_desc_df <- tibble(variable = names(data), 
+                         variable_description = data_desc)
+  
+  # Save to metadata folder
+  
+  write_xlsx(data_desc_df, glue("{metadata_filepath}/{output}.xlsx"))
+  
+}
 
 
+
+### 3 Create Metadata Files ----
+
+# posctode_all_simd_carstairs
+
+metadata(input = pc_all_file, output = pc_all_metadata)
+
+
+# postcode_simd
+
+metadata(input = pc_simd_file, output = pc_simd_metadata)
