@@ -3,7 +3,7 @@
 # Calum Purdie
 # Original date 29/11/2019
 # Latest update author - Calum Purdie
-# Latest update date - 29/11/2019
+# Latest update date - 02/12/2019
 # Latest update description 
 # Type of script - Creation
 # Written/run on RStudio Desktop
@@ -15,7 +15,6 @@
 
 ### 1 Housekeeping ----
 
-library(magrittr)
 library(dplyr)
 library(haven)
 library(writexl)
@@ -32,7 +31,8 @@ lookups_filepath <- file.path(base_filepath, "3_Deprivation",
                               "Postcode Deprivation", "Lookup Files")
 
 metadata_filepath <- file.path(base_filepath, "4_Communication and Training", 
-                               "Website", "5_Metadata of Files", "Excel sheets")
+                               "Website", "5_Metadata of Files", "Excel sheets", 
+                               "Deprivation")
 
 # Set files to use
 
