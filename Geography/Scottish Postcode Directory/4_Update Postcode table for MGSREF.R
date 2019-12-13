@@ -1,3 +1,20 @@
+##########################################################
+# Create SIMD 2016 Population-Weighted Files
+# Calum Purdie
+# Original date 20/12/2019
+# Latest update author - Calum Purdie
+# Latest update date - 11/12/2019
+# Latest update description 
+# Type of script - Update
+# Written/run on RStudio Desktop
+# Version of R that the script was most recently run on - 3.5.1
+# Code for creating population-weighted SIMD 2016 Files
+# Approximate run time - <1 second
+##########################################################
+
+
+### 1 - Housekeeping ----
+
 library(magrittr)
 library(dplyr)
 library(readr)
