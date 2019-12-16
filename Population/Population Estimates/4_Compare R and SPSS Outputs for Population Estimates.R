@@ -78,7 +78,7 @@ all_equal(CA2019_pop_est_1981_2018_R, CA2019_pop_est_1981_2018_SPSS)
 
 CA2019_pop_est_5y_1981_2018_SPSS <- read_sav(
   glue("{SPSS_filepath}/CA2019_pop_est_5year_agegroups_1981_2018.sav"), 
-       user_na=F) %>%
+  user_na=F) %>%
   zap_formats() %>%
   zap_widths() %>%
   remove_all_labels() %>% 
@@ -107,7 +107,7 @@ all_equal(CA2019_pop_est_5y_1981_2018_SPSS, CA2019_pop_est_5y_1981_2018_R)
 
 HB2019_pop_est_1981_2018_SPSS <- read_sav(glue("{SPSS_filepath}/", 
                                                "HB2019_pop_est_1981_2018.sav"), 
-                                               user_na=F) %>%
+                                          user_na=F) %>%
   zap_formats() %>%
   zap_widths() %>%
   remove_all_labels() %>% 
@@ -134,7 +134,7 @@ all_equal(HB2019_pop_est_1981_2018_R, HB2019_pop_est_1981_2018_SPSS)
 
 HB2019_pop_est_5y_1981_2018_SPSS <- read_sav(
   glue("{SPSS_filepath}/HB2019_pop_est_5year_agegroups_1981_2018.sav"), 
-       user_na=F) %>%
+  user_na=F) %>%
   zap_formats() %>%
   zap_widths() %>%
   remove_all_labels() %>% 
