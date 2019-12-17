@@ -1,27 +1,21 @@
+##########################################################
+# Compare R and SPSS Outputs for Postcode SIMD Files
+# Calum Purdie
+# Original date 06/09/2018
+# Latest update author - Calum Purdie
+# Latest update date - 02/12/2019
+# Latest update description 
+# Type of script - Update
+# Written/run on RStudio Desktop
+# Version of R that the script was most recently run on - 3.5.1
+# Code for comparing R and SPSS files for postcode simd data
+# Approximate run time - 5 minutes
+##########################################################
+
 ### 1 - Information ----
 
-# Codename - Compare R and SPSS Outputs for Postcode Deprivation Files
-# Data release - Scotish Postcode Directory 
-# Original Author - Calum Purdie
-# Original Date - 06/09/2018
-# Type - Check
-# Written/run on - R Studio Desktop 
-# Version - 3.5.1
-#
-# install.packages("tidyr")
-# install.packages("dplyr")
-# install.packages("stringr")
-# install.packages("haven")
-# install.packages("sjlabelled")
-#
-# Description - This document is based on the SPSS syntax for comparing R and SPSS output for 
-#               Small Area Population Estimates found within GPD folders. It is designed to allow for the same data 
-#               checks to be made. Each section of the SPSS syntax is contained in this file within different
-#               subsections.
-#
-# Approximate run time - 5 minutes
+# Read in libraries
 
-# Read in packages from library
 library(tidyr)
 library(dplyr)
 library(readr)
@@ -29,22 +23,28 @@ library(stringr)
 library(haven)
 library(sjlabelled)
 library(janitor)
+library(glue)
 
-# Set working directory
-SPSS_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", "Referencing & Standards", "GPD", "3_Deprivation", "Postcode Deprivation", "Lookup Files")
-R_filepath <- file.path(SPSS_filepath, "R Files")
+# Set filepaths
 
+spss_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", 
+                           "Referencing & Standards", "GPD", "3_Deprivation", 
+                           "Postcode Deprivation", "Lookup Files")
+r_filepath <- file.path(spss_filepath, "R Files")
+
+# Set files to use
+pc_simd <- "postcode_2019_2_simd2016"
+pc_all <- "postcode_2019_2_all_simd_carstairs"
 
 ### 2 - postcode_simd ----
-
-### 2.1 - Reading in files ----
 
 # Read in SPSS file and sort by pc7
 # Remove variable labels, formats and widths from SPSS
 # Haven reads in SPSS strings as factors
 # Convert all factors to characters in the SPSS file
 
-pc_SIMD_SPSS <- read_sav(file.path(SPSS_filepath, "postcode_2019_2_simd2016.sav"), user_na=F) %>%
+pc_simd_spss <- read_sav(glue("{spss_filepath}/{pc_simd}.sav"), 
+                         user_na=F) %>%
   arrange(pc7) %>%
   zap_formats() %>%
   zap_widths() %>%
@@ -54,32 +54,32 @@ pc_SIMD_SPSS <- read_sav(file.path(SPSS_filepath, "postcode_2019_2_simd2016.sav"
 # Read in R file and sort by pc7
 # Remove geography name columns
 
-pc_SIMD_R <- readRDS(file.path(R_filepath, "postcode_2019_2_simd2016.rds")) %>% 
+pc_simd_r <- readRDS(glue("{r_filepath}/{pc_simd}.rds")) %>% 
   arrange(pc7) %>% 
-  select(-c(DataZone2011Name, IntZone2011Name, HB2019Name, HSCP2019Name, CA2019Name))
-
-### 2.2 - Compare datasets ----
+  select(-c(DataZone2011Name, IntZone2011Name, HB2019Name, HSCP2019Name, 
+            CA2019Name))
 
 # Compare datasets
-all_equal(pc_SIMD_SPSS, pc_SIMD_R)
+all_equal(pc_simd_spss, pc_simd_r)
 
 
 
 ### 3 - postcode_all_simd_carstairs ----
-
-### 3.1 - Reading in files ----
 
 # Read in SPSS file and sort by pc7
 # Remove variable labels, formats and widths from SPSS
 # Change blank cells in the Data Zone columns to be NA
 # Haven reads in SPSS strings as factors
 # Convert all factors to characters in the SPSS file
-# R reads in some of the decimals in the SPSS file incorrectly which make it look like R and SPSS don't match
-# Occasionally there is a tiny difference between two values, e.g. a difference of n^-15
-# This is because R uses floating point precision: https://floating-point-gui.de/basic/
+# R reads in some of the decimals in the SPSS file incorrectly which make it 
+# look like R and SPSS don't match
+# Occasionally there is a tiny difference between two values, 
+# e.g. a difference of n^-15
+# This is because R uses floating point precision: 
+# https://floating-point-gui.de/basic/
 # Round all values to 2 decimal places using round_half_up
 
-all_SIMD_SPSS <- read_sav(file.path(SPSS_filepath, "postcode_2019_2_all_simd_carstairs.sav")) %>%
+pc_all_spss <- read_sav(glue("{spss_filepath}/{pc_all}.sav")) %>%
   arrange(pc7) %>%
   zap_formats() %>%
   zap_widths() %>%
@@ -96,12 +96,9 @@ all_SIMD_SPSS <- read_sav(file.path(SPSS_filepath, "postcode_2019_2_all_simd_car
 # Remove DataZone2011Name column as this is not in the SPSS file
 # Round all values to 2 decimal places using round_half_up
 
-all_SIMD_R <- readRDS(file.path(R_filepath, "postcode_2019_2_all_simd_carstairs.rds")) %>% 
+pc_all_r <- readRDS(glue("{r_filepath}/{pc_all}.rds")) %>% 
   arrange(pc7) %>% 
   select(-DataZone2011Name) %>% 
   mutate_if(is.numeric, round_half_up, 2)
 
-### 3.2 - Compare datasets ----
-
-all_equal(all_SIMD_SPSS, all_SIMD_R)
-
+all_equal(pc_all_spss, pc_all_r)
