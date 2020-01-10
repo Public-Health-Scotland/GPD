@@ -17,6 +17,8 @@
 # install.packages("tidylog")
 # install.packages("jantior")
 # install.packages("glue")
+# install.packages("here")
+# install.packages("ckanr")
 #
 # Description - Updating Small Area Population Estimates files 
 #               (Data Zone and Int Zone) for yearly NRS release
@@ -33,6 +35,8 @@ library(readr)
 library(tidylog)
 library(janitor)
 library(glue)
+library(here)
+library(ckanr)
 
 # Set filepaths
 
@@ -145,21 +149,23 @@ DZ2011_pop_est_2011_2017 <- readRDS(glue("{base_filepath}/Lookup Files/R Files/"
 ### THIS IS ONLY REQUIRED ONCE ###
 # Need to add in the updated 2019 geographies in the DZ2011_2018 and 
 # DataZone2011_pop_est_2011_2017 files
-# Use the Geography Codes and Names open data file to get the names
-# read_csv producing a timeout error when Calum tried to run it so best 
-# using read.csv
 
-geo_names <- read.csv(paste0("https://www.opendata.nhs.scot/dataset/", 
-                             "9f942fdb-e59e-44f5-b534-d6e17229cc7b/resource/", 
-                             "395476ab-0720-4740-be07-ff4467141352/download/", 
-                             "geography_codes_and_labels_dz2011_01042019.csv")) %>% 
-  select(DZ2011, DZ2011Name, IZ2011Name, CA2011, CA2011Name, HSCP2016, 
-         HSCP2016Name, HB2014, HB2014Name) %>% 
-  rename(DataZone2011 = DZ2011, DataZone2011Name = DZ2011Name, 
-         IntZone2011Name = IZ2011Name, CA2019 = CA2011, CA2019Name = CA2011Name,
-         HSCP2019 = HSCP2016, HSCP2019Name = HSCP2016Name, HB2019 = HB2014,
-         HB2019Name = HB2014Name) %>% 
-  mutate_if(is.factor, as.character)
+# Use the Geography Codes and Names open data file to get the names
+# First need to run the httr configuration script
+
+source(here("Geography", "Scottish Postcode Directory", 
+            "Set httr configuration for API.R"))
+
+ckan <- src_ckan("https://www.opendata.nhs.scot")
+res_id <- "395476ab-0720-4740-be07-ff4467141352"
+
+geo_names <- dplyr::tbl(src = ckan$con, from = res_id) %>% 
+  select(DZ2011, IZ2011Name, CA2011Name, HSCP2016Name, 
+         HB2014Name) %>% 
+  rename(DataZone2011 = DZ2011, IntZone2011Name = IZ2011Name, 
+         CA2019Name = CA2011Name, HSCP2019Name = HSCP2016Name, 
+         HB2019Name = HB2014Name) %>%  
+  as_tibble()
 
 # Update DZ2011_2018
 
