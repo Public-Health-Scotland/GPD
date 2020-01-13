@@ -51,7 +51,7 @@ res_id <- "395476ab-0720-4740-be07-ff4467141352"
 
 geo_names <- dplyr::tbl(src = ckan$con, from = res_id) %>% 
   as_tibble() %>% 
-  recode(DZ2011Name, "Pettiesmuir" = "Pattiesmuir")
+  mutate(DZ2011Name = recode(DZ2011Name, "Pettiesmuir" = "Pattiesmuir"))
 
 # Save the updated file in the Open Data folder
 
