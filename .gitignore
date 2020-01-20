@@ -6,6 +6,7 @@
 data/
 
 Geography/Scottish Postcode Directory/Set httr configuration for API.R
+Geography/Scottish Postcode Directory/APEXT Connection.R
 
 # Common text files that may contain data #
 *.[cC][sS][vV]
