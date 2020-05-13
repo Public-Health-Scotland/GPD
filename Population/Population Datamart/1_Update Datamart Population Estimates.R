@@ -1,24 +1,18 @@
-### 1 - Information ----
+##########################################################
+# Update Datamart Population Estimates
+# Calum Purdie
+# Original date 24/10/2019
+# Latest update author - Calum Purdie
+# Latest update date - 04/05/2020
+# Latest update description - formatting code
+# Type of script - Update
+# Written/run on RStudio Desktop
+# Version of R that the script was most recently run on - 3.5.1
+# Code for updating population estimates in the Populations Datamart
+# Approximate run time - 10 seconds
+##########################################################
 
-# Codename - Update Datamart Population Estimates
-# Original Author - Calum Purdie
-# Original Date - 24/10/2019
-# Updated - -01/11/2019
-# Type - Updating files
-# Written/run on - R Studio Desktop 
-# Version - 3.5.1
-#
-# install.packages("magrittr")
-# install.packages("tidyr")
-# install.packages("dplyr")
-# install.packages("tidylog")
-# install.packages("readr")
-# install.packages("glue")
-# install.packages("xfun")
-#
-# Description - Code for updating population estimates in the 
-#               Populations Datamart.
-# Approximate run time - <1 second
+### 1 - Information ----
 
 library(magrittr)
 library(tidyr)
@@ -26,18 +20,18 @@ library(dplyr)
 library(tidylog)
 library(readr)
 library(glue)
+library(here)
 library(xfun)
 
 # Set filepaths
 
-base_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", 
-                           "Referencing & Standards", "GPD", "2_Population")
-lookups_filepath <- file.path(base_filepath, "Population Estimates", 
-                              "Lookup Files", "R Files")
-templates_filepath <- file.path(base_filepath, "Population Datamart", 
-                                "Creation of Files", "Templates", "R Templates")
-datamart_filepath <- file.path(base_filepath, "Population Datamart", 
-                               "Lookup Files", "Other Geographies")
+base_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
+                      "2_Population")
+lookups_filepath <- glue("{base_filepath}/Population Estimates/Lookup Files/", 
+                         "R Files")
+templates_filepath <- here::here("Population/Population Datamart/R Templates")
+datamart_filepath <- glue("{base_filepath}/Population Datamart/Lookup Files/", 
+                          "Other Geographies")
 
 # Set date for filenames
 
@@ -57,11 +51,12 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
     # Reorder columns
     
     data <- readRDS(glue("{lookups_filepath}/{file}")) %>% 
+      rename(Year = year) %>% 
       filter(Year == i) %>% 
       mutate(Population_Name = pop_name) %>% 
-      rename(Gender = Sex, 
-             Age_Band = Age, 
-             Population = Pop) %>% 
+      rename(Gender = sex, 
+             Age_Band = age, 
+             Population = pop) %>% 
       mutate(Location = "", 
              Location_Type = "", 
              Month = "", 
@@ -70,7 +65,7 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
     if(file_name == "CA_ESTIMATES"){
       
       data %<>% 
-        rename(Council_Area_9 = CA2011) %>% 
+        rename(Council_Area_9 = ca2011) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                NHS_Board_Code_9 = "",
@@ -79,7 +74,7 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
     } else if(file_name == "HSCP_ESTIMATES"){
       
       data %<>% 
-        rename(HSCP_Code = HSCP2016) %>% 
+        rename(HSCP_Code = hscp2016) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                NHS_Board_Code_9 = "",
@@ -90,7 +85,7 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
                file_name == "HBEVENTv2_ESTIMATES"){
       
       data %<>% 
-        rename(NHS_Board_Code_9 = HB2014) %>% 
+        rename(NHS_Board_Code_9 = hb2014) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                Council_Area_9 = "",
@@ -136,19 +131,19 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
   
   if(file_name == "CA_ESTIMATES"){
     
-    gsub_dir(dir = datamart_filepath, pattern = "5824,,,,,,,", 
+    gsub_dir(dir = datamart_filepath, pattern = "5824,,,,,,,",
              replacement = "5824", recursive = FALSE, ext = "csv")
     
   } else if(file_name == "HSCP_ESTIMATES"){
     
-    gsub_dir(dir = datamart_filepath, pattern = "5642,,,,,,,", 
+    gsub_dir(dir = datamart_filepath, pattern = "5642,,,,,,,",
              replacement = "5642", recursive = FALSE, ext = "csv")
     
-  } else if (file_name == "HBCURRENT_ESTIMATES" | 
-             file_name == "HBEVENT_ESTIMATES" | 
+  } else if (file_name == "HBCURRENT_ESTIMATES" |
+             file_name == "HBEVENT_ESTIMATES" |
              file_name == "HBEVENTv2_ESTIMATES"){
     
-    gsub_dir(dir = datamart_filepath, pattern = "2548,,,,,,,", 
+    gsub_dir(dir = datamart_filepath, pattern = "2548,,,,,,,",
              replacement = "2548", recursive = FALSE, ext = "csv")
     
   } else {
@@ -162,42 +157,46 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
 
 ### 3 - Council Area ----
 
-datamart_output(start = "1981", end = "2018", 
+datamart_output(start = "2019", end = "2019", 
                 pop_name = "Council Area Population Estimates", 
-                file = "CA2019_pop_est_1981_2018.rds", 
+                file = "CA2019_pop_est_1981_2019.rds", 
                 file_name = "CA_ESTIMATES", 
                 template = "Template_CA_estimates.rds")
 
+
+
 ### 4 - HSCP ----
 
-datamart_output(start = "1981", end = "2018", 
+datamart_output(start = "2019", end = "2019", 
                 pop_name = "Health and Social Care Partnership Population Estimates", 
-                file = "HSCP2019_pop_est_1981_2018.rds", 
+                file = "HSCP2019_pop_est_1981_2019.rds", 
                 file_name = "HSCP_ESTIMATES", 
                 template = "Template_HSCP_estimates.rds")
+
+
 
 ### 5 - Health Board ----
 
 ### 5.1 - HBCURRENT ----
 
-datamart_output(start = "1981", end = "2018", 
+datamart_output(start = "2019", end = "2019", 
                 pop_name = "NHS Board Current Population Estimates", 
-                file = "HB2019_pop_est_1981_2018.rds", 
+                file = "HB2019_pop_est_1981_2019.rds", 
                 file_name = "HBCURRENT_ESTIMATES", 
                 template = "Template_HBcurrent_estimates.rds")
 
 ### 5.2 - HBEVENT ----
 
-datamart_output(start = "1981", end = "2018", 
+datamart_output(start = "2019", end = "2019", 
                 pop_name = "NHS Board At Event Population Estimates", 
-                file = "HB2019_pop_est_1981_2018.rds", 
+                file = "HB2019_pop_est_1981_2019.rds", 
                 file_name = "HBEVENT_ESTIMATES", 
                 template = "Template_HBevent_estimates.rds")
 
 ### 5.3 - HBEVENTv2 ----
 
-datamart_output(start = "1981", end = "2018", 
+datamart_output(start = "2019", end = "2019", 
                 pop_name = "NHS Board At Event (excluding Argyll & Clyde) Population Estimates", 
-                file = "HB2019_pop_est_1981_2018.rds", 
+                file = "HB2019_pop_est_1981_2019.rds", 
                 file_name = "HBEVENTv2_ESTIMATES", 
                 template = "Template_HB2014eventv2_estimates.rds")
