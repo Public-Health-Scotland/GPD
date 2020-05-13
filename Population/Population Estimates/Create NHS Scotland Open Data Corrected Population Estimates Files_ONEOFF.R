@@ -174,16 +174,18 @@ write_csv(HSCP2016_pop_est_1981_2018, file.path(open_data_filepath, "HSCP2016_po
 
 ### 7 - Update HB2006 Files ----
 
-# Read in HB2019 estimates
+# Read in HB2006 estimates
 HB2006_pop_est <- geo_pop(file.path(data_filepath, "HB2006_pop_est_1981_2013.rds"), "HB2006")
 
 # Attach Scotland national code
 HB2006_pop_est$HB2006[is.na(HB2006_pop_est$HB2006)] <- 'S92000003'
 
 # Reorder columns
-HB2006_pop_est <- HB2006_pop_est %>%
-  select(Year, HB2006, Sex, AllAges, Age0:Age90plus)
+HB2006_pop_est <- HB2006_pop_est %>% 
+  rename(HB = HB2006) %>% 
+  mutate(HBQF = case_when(HB == "S92000003" ~ "d")) %>%
+  select(Year, HB, HBQF, Sex, AllAges, Age0:Age90plus)
 
 # Write as csv
 # Change date to date the file is saved
-write_csv(HB2006_pop_est, file.path(open_data_filepath, "HB2006_pop_est_02072019.csv"), na = "")
+write_csv(HB2006_pop_est, file.path(open_data_filepath, "HB2006_pop_est_02042020.csv"), na = "")
