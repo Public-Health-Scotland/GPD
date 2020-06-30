@@ -3,7 +3,7 @@
 # Calum Purdie
 # Original date 31/05/2019
 # Latest update author - Calum Purdie
-# Latest update date - 07/02/2020
+# Latest update date - 05/06/2020
 # Latest update description 
 # Type of script - Check
 # Written/run on RStudio Desktop
@@ -25,10 +25,10 @@ library(tidylog)
 library(glue)
 library(janitor)
 
-SPSS_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", 
-                           "Referencing & Standards", "GPD", "2_Population", 
-                           "Small Area Population Estimates", "Lookup Files")
-R_filepath <- file.path(SPSS_filepath, "R Files")
+SPSS_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
+                      "2_Population/Small Area Population Estimates/", 
+                      "Lookup Files")
+R_filepath <- glue("{SPSS_filepath}/R Files")
 
 
 
@@ -46,7 +46,8 @@ compare_DZ <- function(SPSS, R){
     
   R_file <- readRDS(file.path(R_filepath, R)) %>% 
     select(-c(datazone2011name, intzone2011name, hb2019name, hscp2019name, 
-              ca2019name))
+              ca2019name)) %>% 
+    mutate_if(is.integer, as.numeric)
   
   print(all_equal(R_file, SPSS_file))
   
@@ -79,7 +80,7 @@ compare_IZ <- function(SPSS, R){
   
   R_file <- readRDS(file.path(R_filepath, R)) %>% 
     select(-intzone2011name) %>% 
-    mutate()
+    mutate_if(is.integer, as.numeric)
   
   print(all_equal(R_file, SPSS_file))
   
