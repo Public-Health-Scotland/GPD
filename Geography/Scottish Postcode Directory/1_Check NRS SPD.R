@@ -1,29 +1,21 @@
-start <- Sys.time()
-
-### 1 - Information ----
-
-# Codename - Check NRS SPD
+##########################################################
+# Check NRS SPD
+# Calum Purdie
+# Original date 06/08/2018
 # Data release - Scottish Postcode Directory
-# Original Author - Calum Purdie
-# Original Date - 06/08/2018
-# Updated - 04/11/2019
-# Type - Preparation
-# Written/run on - R Studio Desktop 
-# Version - 3.5.1
-#
-# install.packages(magrittr)
-# install.packages("tidyr")
-# install.packages("dplyr")
-# install.packages(tidylog)
-# install.packages(glue)
-#
-# Description - Code for checking the Scottish Postcode Directory file receieved
-#               from National Records of Scotland
-#
+# Latest update author - Calum Purdie
+# Latest update date - 19/05/2020
+# Latest update description - 2020_1 update
+# Type of script - Preparation
+# Written/run on RStudio Desktop
+# Version of R that the script was most recently run on - 3.5.1
+# Code for checking the Scottish Postcode Directory file receieved from NRS
 # Approximate run time - 1 minute
+##########################################################
 
+### 1 - Housekeeping ----
 
-### Read in packages from library
+# Read in packages from library
 
 library(magrittr)
 library(tidyr)
@@ -31,23 +23,57 @@ library(dplyr)
 library(tidylog)
 library(glue)
 
-## Set filepath
+# Set version to use
 
-data_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", 
-                           "Referencing & Standards", "GPD", "1_Geography", 
-                           "Scottish Postcode Directory", "Source Data", 
-                           "2019_2")
+version <- "2020_1"
+prev_version <- "2019_2"
+
+# Set filepath
+
+data_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
+                      "1_Geography/Scottish Postcode Directory/Source Data/", 
+                      "{version}")
+prev_data_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/", 
+                           "GPD/1_Geography/Scottish Postcode Directory/", 
+                           "Source Data/{prev_version}")
 
 
 
-### 2 - Tidying SPD data ----
+### 2 - Combine Single Record Files ----
 
 # Import Scottish Postcode Directory
-# Use read.csv as read_csv produced a couple of errors to do with decimals
+# 2020_1 version split into three parts
+# Use read.csv as read_csv and fread produced a couple of errors to do with
+# decimals
 # Sort cases by Postcode
 
-SPD_data <- read.csv(glue("{data_filepath}/SingleRecord.csv"), 
-                     stringsAsFactors = F) %>%
+file_a <- read.csv(glue("{data_filepath}/SingleRecordA.csv"), 
+                   stringsAsFactors = F)
+file_b <- read.csv(glue("{data_filepath}/SingleRecordB.csv"), 
+                   stringsAsFactors = F)
+file_c <- read.csv(glue("{data_filepath}/SingleRecordC.csv"), 
+                   stringsAsFactors = F)
+
+spd <- bind_rows(file_a, file_b, file_c) %>% 
+  arrange(Postcode)
+
+# Save combined file
+
+write_csv(spd, glue("{data_filepath}/SingleRecord.csv"))
+
+rm(file_a, file_b, file_c)
+
+
+
+### 3 - Tidying SPD data ----
+
+# Import Scottish Postcode Directory
+# Use read.csv as read_csv and fread produced a couple of errors to do with
+# decimals
+# Sort cases by Postcode
+
+spd <- read.csv(glue("{data_filepath}/SingleRecord.csv"), 
+                     stringsAsFactors = F) %>% 
   arrange(Postcode)
 
 # Total number of records in file - should increase from previous version
@@ -67,7 +93,8 @@ SPD_data <- read.csv(glue("{data_filepath}/SingleRecord.csv"),
 # 2018_2 = 222,107
 # 2019_1 = 222,687
 # 2019_1.5 = 222,930
-# 2019_2 = 223,826
+# 2019_2 = 223,286
+# 2020_1 = 223,821
 
 # Postcode Type - expected around  S (80%) L (20%) - compare with previous numbers
 # 2014_1 S (81.0%) L (19.0%).
@@ -85,20 +112,21 @@ SPD_data <- read.csv(glue("{data_filepath}/SingleRecord.csv"),
 # 2019_1.5 S (81.6%) L (18.4%).
 # 2019_2 S (81.6%) L (18.4%).
 
-SPD_data %>% group_by(PostcodeType) %>% 
+spd %>% 
+  group_by(PostcodeType) %>% 
   summarise(n = n()) %>% 
   mutate(freq = n/sum(n)*100)
 
 # Quick sense check of HB and CA variables and ensure there are no blanks
 # Things are fine if the outputs are all with value 0
 
-SPD_data %>% summarise(missing = sum(is.na(HealthBoardArea2019Code)))
-SPD_data %>% summarise(missing = sum(is.na(CouncilArea2019Code)))
-SPD_data %>% summarise(missing = sum(is.na(IntegrationAuthority2019Code)))
+spd %>% summarise(missing = sum(is.na(HealthBoardArea2019Code)))
+spd %>% summarise(missing = sum(is.na(CouncilArea2019Code)))
+spd %>% summarise(missing = sum(is.na(IntegrationAuthority2019Code)))
 
 
 
-### 3 - Check columns are correctly aligned ----
+### 4 - Check columns are correctly aligned ----
 
 # As a result of the 2019 boundary change, 8 postcodes moved from Glasgow City
 # Council to North Lanarkshire Council
@@ -109,21 +137,21 @@ SPD_data %>% summarise(missing = sum(is.na(IntegrationAuthority2019Code)))
 
 # 0 postcodes removed from North Lanarkshire
 
-SPD_data %>% 
+spd %>% 
   filter(CouncilArea2018Code == 'S12000044' & 
          CouncilArea2019Code != 'S12000050') %>% 
   select(Postcode)
 
-# 8 postcodes now in North Lanarkshire
+# 8 postcodes removed from Glasgow City
 
-SPD_data %>% 
+spd %>% 
   filter(CouncilArea2018Code == 'S12000046' & 
          CouncilArea2019Code != 'S12000049') %>% 
   select(Postcode)
 
 # 8 postcodes now in North Lanarkshire
 
-SPD_data %>% 
+spd %>% 
   filter(CouncilArea2018Code == 'S12000046' & 
          CouncilArea2019Code == 'S12000050') %>% 
   select(Postcode)
@@ -133,7 +161,7 @@ SPD_data %>%
 # between GG&C and Highland for HB2006
 # Output should be tibble with all values as NA
 
-SPD_data %>%
+spd %>%
   mutate(HB_issue = case_when(HealthBoardArea1995Code == '01' & 
                               HealthBoardArea2006Code != 'S08000008' ~ 1, 
                               HealthBoardArea1995Code == '02' & 
@@ -171,7 +199,7 @@ SPD_data %>%
 # Check that the Health Board 2019 and Council Area are correctly aligned
 # Output should be tibble with all values as NA
 
-SPD_data %>%
+spd %>%
   mutate(CA_HB_issue = case_when(CouncilArea2019Code == 'S12000005' & 
                                  HealthBoardArea2019Code != 'S08000019' ~ 1,
                                  CouncilArea2019Code == 'S12000006' & 
@@ -241,7 +269,7 @@ SPD_data %>%
 # Check that HSCP and Council Area are correctly aligned
 # Output should be tibble with all values as NA
 
-SPD_data %>%
+spd %>%
   mutate(CA_HSCP_issue = case_when(IntegrationAuthority2019Code == "S37000001" & 
                                    CouncilArea2019Code != 'S12000033' ~ 1,
                                    IntegrationAuthority2019Code == "S37000002" & 
@@ -311,7 +339,7 @@ SPD_data %>%
 # Check that urban rural variables are aligned correctly
 # Output should be tibble with all values as NA
 
-SPD_data %>% 
+spd %>% 
   mutate(UR_check_16 = case_when(UrbanRural8Fold2016Code  == 1 & 
                                  UrbanRural6Fold2016Code != 1 ~ 1,
                                  UrbanRural8Fold2016Code  == 2 & 
@@ -332,11 +360,11 @@ SPD_data %>%
 
 
 
-### 4 - Check that there are no incorrectly blank cells ----
+### 5 - Check that there are no incorrectly blank cells ----
 
 checks <- function(variable1, variable2){
   
-  SPD_data %>% 
+  spd %>% 
     mutate(check = case_when(variable1 == "" & variable2 != "" ~ 1, 
                              variable1 != "" & variable2 == "" ~ 2)) %>% 
     count(check) %>% 
@@ -346,73 +374,73 @@ checks <- function(variable1, variable2){
 
 
 
-### 4.1 - Check Output Areas ----
+### 5.1 - Check Output Areas ----
 
 # Check that if Output Area 2001 is blank, Data Zone 2001 is also blank
 # Check that if Output Area 2001 is populated, Data Zone 2001 is also populated
 
-OA2001_DZ2001 <- checks("OutputArea2001Code", "DataZone2001Code")
+checks("OutputArea2001Code", "DataZone2001Code")
 
 # Check that if Output Area 2011 is blank, Data Zone 2011 is also blank
 # Check that if Output Area 2011 is populated, Data Zone 2011 is also populated
 
-OA2011_DZ2011 <- checks("OutputArea2011Code", "DataZone2011Code")
+checks("OutputArea2011Code", "DataZone2011Code")
 
 
 
 
-### 4.2 - Check Data Zones and Intermediate Zones ----
+### 5.2 - Check Data Zones and Intermediate Zones ----
 
 # Check that if Data Zone 2001 is blank, Intermediate Zone 2001 is also blank
 # Check that if Data Zone 2001 is populated, 
 # Intermediate Zone 2001 is also populated
 
-DZ2001_IZ2001 <- checks("DataZone2001Code", "IntermediateZone2001Code")
+checks("DataZone2001Code", "IntermediateZone2001Code")
 
 # Check that if Data Zone 2011 is blank, Intermediate Zone 2011 is also blank
 # Check that if Data Zone 2011 is populated, 
 # Intermediate Zone 2011 is also populated
 
-DZ2011_IZ2011 <- checks("DataZone2011Code", "IntermediateZone2011Code")
+checks("DataZone2011Code", "IntermediateZone2011Code")
 
 # Check that if Data Zone 2001 is blank, Data Zone 2011 is also blank
 # Check that if Data Zone 2001 is populated, Data Zone 2011 is also populated
 
-DZ2001_DZ2011 <- checks("DataZone2001Code", "DataZone2011Code")
+checks("DataZone2001Code", "DataZone2011Code")
 
 # Check that if Intermediate Zone 2001 is blank, 
 # Intermediate Zone 2011 is also blank
 # Check that if Intermediate Zone 2001 is populated, 
 # Intermediate Zone 2011 is also populated
 
-IZ2001_IZ2011 <- checks("IntermediateZone2001Code", "IntermediateZone2011Code")
+checks("IntermediateZone2001Code", "IntermediateZone2011Code")
 
 
 
-### 4.3 - Check for blank fields ----
+### 5.3 - Check for blank fields ----
 
 # Check that there are no postcodes with a blank 2001 Data Zone, 2011 Data Zone, 
 # 2001 Intermediate Zone or 2011 Intermediate Zone
 # Things are fine if the outputs are all with value 0
 
-SPD_data %>% summarise(missing = sum(is.na(DataZone2001Code)))
-SPD_data %>% summarise(missing = sum(is.na(DataZone2011Code)))
-SPD_data %>% summarise(missing = sum(is.na(IntermediateZone2001Code)))
-SPD_data %>% summarise(missing = sum(is.na(IntermediateZone2011Code)))
+spd %>% summarise(missing = sum(is.na(DataZone2001Code)))
+spd %>% summarise(missing = sum(is.na(DataZone2011Code)))
+spd %>% summarise(missing = sum(is.na(IntermediateZone2001Code)))
+spd %>% summarise(missing = sum(is.na(IntermediateZone2011Code)))
 
 
 # Check Scottish Parliamentary Constituency and Scottish Parliamentary Region 
 # fields have no blanks
 # Things are fine if the outputs are all with value 0
 
-SPD_data %>% 
+spd %>% 
   summarise(missing = sum(is.na(ScottishParliamentaryConstituency2014Code)))
-SPD_data %>% 
+spd %>% 
   summarise(missing = sum(is.na(ScottishParliamentaryRegion2014Code)))
 
 
 
-### 5 - Check Postcode Types ----
+### 6 - Check Postcode Types ----
 
 # Check that the 17 English Voting Code (TD15 9xx postcodes) are not included
 # If so delete them and raise with NRS
@@ -423,14 +451,14 @@ eng_voting_codes <- c("TD15 9SA", "TD15 9SB", "TD15 9SD", "TD15 9SE",
                       "TD15 9SR", "TD15 9SS", "TD15 9ST", "TD15 9SU", 
                       "TD15 9SW") 
 
-eng_voting_codes %in% SPD_data$Postcode
+eng_voting_codes %in% spd$Postcode
 
 
 # Check split_indicator against postcode type.
 # Should be more small user postcodes than large user postcodes.
 # Should be more non-split postcodes than split postcodes.
 
-SPD_data %>% 
+spd %>% 
   group_by(SplitIndicator, PostcodeType) %>% 
   count()
 
@@ -438,22 +466,21 @@ SPD_data %>%
 # Ensure all small user split postcodes with a split indicator have 
 # split character A
 
-SPD_data %>% 
+spd %>% 
   filter(PostcodeType == "S") %>% 
   group_by(SplitChar, SplitIndicator) %>% 
   count()
 
 # Ensure all large user postcodes have a "Y" in the imputed field
 
-SPD_data %>% 
+spd %>% 
   filter(PostcodeType == "L") %>% 
   group_by(Imputed) %>% 
   count()
 
 # Ensure that most small user postcodes are not imputed
-# Small user total can be seen in Global Environment tab
 
-SPD_data %>% 
+spd %>% 
   filter(PostcodeType == "S") %>% 
   group_by(Imputed) %>% 
   count()
@@ -462,13 +489,13 @@ SPD_data %>%
 # field LinkedSmallUserPostcode
 # Issue fixed on source data and raised with NRS 26/10/2016.
 
-SPD_data %>% 
+spd %>% 
   group_by(LinkedSmallUserPostcodeSplitChar) %>% 
   count()
 
 # Output should say <0 rows> (or 0-length row.names)
 
-SPD_data %>% filter(substring(LinkedSmallUserPostcode, 9, 1) != "" | 
+spd %>% filter(substring(LinkedSmallUserPostcode, 9, 1) != "" | 
                    (substring(LinkedSmallUserPostcode, 8, 1) != "" & 
                     substring(LinkedSmallUserPostcode, 4, 1) != "") | 
                    (substring(LinkedSmallUserPostcode, 7, 1) != "" & 
@@ -476,6 +503,171 @@ SPD_data %>% filter(substring(LinkedSmallUserPostcode, 9, 1) != "" |
                     substring(LinkedSmallUserPostcode, 1, 2) != "NO"))
 
 
-end <- Sys.time()
 
-end - start
+### 7 - Check Geography Aggregation ----
+
+# Check all Data Zones map to one Intermediate Zone
+# Filter for Data Zones that map to more than one Intermediate Zone
+
+spd %>% 
+  count(DataZone2011Code, IntermediateZone2011Code) %>% 
+  group_by(DataZone2011Code) %>% 
+  filter(n() > 1)
+
+# Check all Data Zones map to one Council Area
+# Filter for Data Zones that map to more than one Council Area
+# Should be 8 instances of S01010117 mapping to S12000050
+
+spd %>% 
+  count(DataZone2011Code, CouncilArea2019Code) %>% 
+  group_by(DataZone2011Code) %>% 
+  filter(n() > 1)
+
+# Check all Data Zones map to one Health Board
+# Filter for Data Zones that map to more than one Health Board
+# Should be 8 instances of S01010117 mapping to S08000032
+
+spd %>% 
+  count(DataZone2011Code, HealthBoardArea2019Code) %>% 
+  group_by(DataZone2011Code) %>% 
+  filter(n() > 1)
+
+# Check all Intermediate Zones map to one Council Area
+# Filter for Intermediate Zones that map to more than one Council Area
+# Should be 8 instances of S02001906 mapping to S12000050
+
+spd %>% 
+  count(IntermediateZone2011Code, CouncilArea2019Code) %>% 
+  group_by(IntermediateZone2011Code) %>% 
+  filter(n() > 1)
+
+# Check all Council Areas map to one Integration Authority
+# Filter for Council Areas that map to more than one Integration Authority
+
+spd %>% 
+  count(CouncilArea2019Code, IntegrationAuthority2019Code) %>% 
+  group_by(CouncilArea2019Code) %>% 
+  filter(n() > 1)
+
+# Check all Council Areas map to one Health Board
+# Filter for Council Areas that map to more than one Health Board
+
+spd %>% 
+  count(CouncilArea2019Code, HealthBoardArea2019Code) %>% 
+  group_by(CouncilArea2019Code) %>% 
+  filter(n() > 1)
+
+
+### 8 - Compare to Previous SPD ----
+
+# Read in previous SPD file
+
+prev_spd <- read.csv(glue("{prev_data_filepath}/SingleRecord.csv"), 
+                stringsAsFactors = F) %>% 
+  mutate(DateOfIntroduction = as.Date(DateOfIntroduction, format = "%d/%m/%Y"), 
+         DateOfDeletion = as.Date(DateOfDeletion, format = "%d/%m/%Y")) %>% 
+  arrange(Postcode)
+
+# Postcodes that have been deleted since last SPD
+# Reformat dates to make them easier to work with
+# Filter out new postcodes and select relevant columns
+# Rename DateOfDeletion in new spd for comparison
+# Join Postcode and DateOfDeletion columns from previous spd
+# Filter out postcodes that have been deleted
+
+deleted_pc <- spd %>% 
+  mutate(DateOfIntroduction = as.Date(DateOfIntroduction, format = "%d/%m/%Y"), 
+         DateOfDeletion = as.Date(DateOfDeletion, format = "%d/%m/%Y")) %>% 
+  filter(Postcode %in% prev_spd$Postcode) %>% 
+  select(Postcode, DateOfDeletion) %>% 
+  rename(Deletion_new = DateOfDeletion) %>% 
+  left_join(select(prev_spd, Postcode, DateOfDeletion)) %>% 
+  filter(!is.na(Deletion_new) & is.na(DateOfDeletion))
+
+# Postcodes that have changed data zone
+# Filter out new postcodes and select relevant columns
+# Rename DataZone2011Code in new spd for comparison
+# Join Postcode and DataZone2011Code columns from previous spd
+
+dz_pc <- spd %>% 
+  filter(Postcode %in% prev_spd$Postcode) %>% 
+  select(Postcode, DataZone2011Code) %>% 
+  rename(dz_new = DataZone2011Code) %>% 
+  left_join(select(prev_spd, Postcode, DataZone2011Code)) %>% 
+  filter(dz_new != DataZone2011Code)
+
+# Postcodes that have changed intermediate zone
+# Filter out new postcodes and select relevant columns
+# Rename IntermediateZone2011Code in new spd for comparison
+# Join Postcode and IntermediateZone2011Code columns from previous spd
+
+iz_pc <- spd %>% 
+  filter(Postcode %in% prev_spd$Postcode) %>% 
+  select(Postcode, IntermediateZone2011Code) %>% 
+  rename(iz_new = IntermediateZone2011Code) %>% 
+  left_join(select(prev_spd, Postcode, IntermediateZone2011Code)) %>% 
+  filter(iz_new != IntermediateZone2011Code)
+
+# Check for postcodes where IZ has changed but DZ is the same
+
+iz_pc %>% filter(!(Postcode %in% dz_pc$Postcode))
+
+# Postcodes that have changed council area
+# Filter out new postcodes and select relevant columns
+# Rename CouncilArea2019Code in new spd for comparison
+# Join Postcode and CouncilArea2019Code columns from previous spd
+
+ca_pc <- spd %>% 
+  filter(Postcode %in% prev_spd$Postcode) %>% 
+  select(Postcode, CouncilArea2019Code) %>% 
+  rename(ca_new = CouncilArea2019Code) %>% 
+  left_join(select(prev_spd, Postcode, CouncilArea2019Code)) %>% 
+  filter(ca_new != CouncilArea2019Code)
+
+# Check for postcodes where CA has changed but DZ or IZ is the same
+
+ca_pc %>% filter(!(Postcode %in% dz_pc$Postcode) | 
+                 !(Postcode %in% iz_pc$Postcode))
+
+# Postcodes that have changed integration authority
+# Filter out new postcodes and select relevant columns
+# Rename IntegrationAuthority2019Code in new spd for comparison
+# Join Postcode and IntegrationAuthority2019Code columns from previous spd
+
+ia_pc <- spd %>% 
+  filter(Postcode %in% prev_spd$Postcode) %>% 
+  select(Postcode, IntegrationAuthority2019Code) %>% 
+  rename(ia_new = IntegrationAuthority2019Code) %>% 
+  left_join(select(prev_spd, Postcode, IntegrationAuthority2019Code)) %>% 
+  filter(ia_new != IntegrationAuthority2019Code)
+
+# Check for postcodes where CA has changed but DZ or IZ is the same
+
+ia_pc %>% filter(!(Postcode %in% dz_pc$Postcode) | 
+                   !(Postcode %in% iz_pc$Postcode))
+
+# Check for postcodes where CA has changed but IA is the same
+
+ia_pc %>% filter(!(Postcode %in% ca_pc$Postcode))
+
+# Postcodes that have changed integration authority
+# Filter out new postcodes and select relevant columns
+# Rename HealthBoardArea2019Code in new spd for comparison
+# Join Postcode and HealthBoardArea2019Code columns from previous spd
+
+hb_pc <- spd %>% 
+  filter(Postcode %in% prev_spd$Postcode) %>% 
+  select(Postcode, HealthBoardArea2019Code) %>% 
+  rename(ia_new = HealthBoardArea2019Code) %>% 
+  left_join(select(prev_spd, Postcode, HealthBoardArea2019Code)) %>% 
+  filter(ia_new != HealthBoardArea2019Code)
+
+# Check for postcodes where CA has changed but DZ or IZ is the same
+
+hb_pc %>% filter(!(Postcode %in% dz_pc$Postcode) | 
+                 !(Postcode %in% iz_pc$Postcode))
+
+# Check for postcodes where CA or IA has changed but HB is the same
+
+hb_pc %>% filter(!(Postcode %in% ca_pc$Postcode) | 
+                 !(Postcode %in% ia_pc$Postcode))
