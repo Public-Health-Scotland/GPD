@@ -41,12 +41,13 @@ spss_lookup <- read_sav(glue("{filepath}/{lookup}.sav"), user_na=F) %>%
   zap_widths() %>%
   remove_all_labels() %>% 
   mutate_if(is.factor, as.character) %>% 
-  clean_names()
+  clean_names() %>% 
+  rename(datazone2011 = data_zone2011)
 
 # Read in R file
 
 r_lookup <- readRDS(glue("{filepath}/{lookup}.rds")) %>% 
-  select(-c(data_zone2011name))
+  select(-c(datazone2011name))
 
 # Compare files
 
