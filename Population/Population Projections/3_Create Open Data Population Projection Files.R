@@ -3,7 +3,7 @@
 # Calum Purdie
 # Original date 16/04/2019
 # Latest update author - Calum Purdie
-# Latest update date - 27/03/2020
+# Latest update date - 03/07/2020
 # Latest update description - formatting code
 # Type of script - Creation
 # Written/run on RStudio Desktop
@@ -43,10 +43,11 @@ end <- "2043"
 
 ### 2 - Create function to read in population data and restructure ----
 
-pop_proj <- function(filepath, col_start, col_end){
+pop_proj <- function(filepath, col_start, col_end, variable){
   
   # Read in rds version and rename columns for open data format
   # Arrange by Year, Sex and Age and spread data by Age and Pop
+  # Rename Age variables to have Age prefix
   
   geo_pop_proj <- readRDS(filepath) %>%
     select(-sex) %>%
@@ -55,13 +56,36 @@ pop_proj <- function(filepath, col_start, col_end){
            Age = age,
            Pop = pop) %>%
     arrange(Year, Sex, Age) %>%
-    spread(Age, Pop)
+    spread(Age, Pop) %>% 
+    rename_at(col_start:col_end, function(x) paste("Age", x, sep=""))
   
-  # Rename Age variables to have Age prefix
+  # Create totals for male and female combined
+  # If Scotland projections group by Year
+  # If smaller geography group by Year and geography
   
-  colnames(geo_pop_proj)[col_start:col_end] <- 
-    paste("Age", colnames(geo_pop_proj[,c(col_start:col_end)]), sep="")
+  if (col_start == 3 & col_end == 93){
+    
+    all_total <- geo_pop_proj %>% 
+      group_by(Year) %>% 
+      summarise_at(vars(Age0:Age90), list(sum)) %>%
+      ungroup() %>% 
+      mutate(Sex = "All")
+    
+  } else {
   
+  all_total <- geo_pop_proj %>% 
+    group_by(Year, !!as.name(variable)) %>% 
+    summarise_at(vars(Age0:Age90), list(sum)) %>%
+    ungroup() %>% 
+    mutate(Sex = "All")
+  
+  }
+  
+  # Add all_total to geo_pop_est
+  
+  geo_pop_proj %<>% 
+    bind_rows(all_total)
+
   # Group by Year and Sex for single years of age for calculating Scotland total
   
   scot_total <- geo_pop_proj %>%
@@ -72,20 +96,15 @@ pop_proj <- function(filepath, col_start, col_end){
   # Join geo_pop_proj and scot_total
   # Sum across all ages to get totals
   # Sort by Year and Sex
-  
-  geo_pop_proj_od <- geo_pop_proj %>%
-    full_join(scot_total) %>%
-    mutate(AllAges = rowSums(.[col_start:col_end])) %>%
-    arrange(Year, Sex)
-  
   # Reorder to set missing data first
   
-  geo_pop_proj_od <- setorder(geo_pop_proj_od, na.last = F)
-  
-  # Rename Age90 to Age90plus
-  
-  geo_pop_proj_od %<>%
-    rename(Age90plus = Age90)
+  geo_pop_proj %<>%
+    full_join(scot_total) %>%
+    mutate(AllAges = rowSums(.[col_start:col_end]), 
+           SexQF = case_when(Sex == "All" ~ "d")) %>%
+    arrange(Year, Sex) %>%
+    rename(Age90plus = Age90) %>% 
+    setorder(na.last = F)
   
 }
 
@@ -103,19 +122,19 @@ scotland_pop_proj <-
 
 CA2019_pop_proj <- 
   pop_proj(filepath = glue("{base_filepath}/CA2019_pop_proj_{start}_{end}.rds"), 
-           col_start = 7, col_end = 97)
+           col_start = 7, col_end = 97, variable = "ca2019")
 
 # Read in HB2019 estimates
 
 HB2019_pop_proj <- 
   pop_proj(filepath = glue("{base_filepath}/HB2019_pop_proj_{start}_{end}.rds"), 
-           col_start = 7, col_end = 97)
+           col_start = 7, col_end = 97, variable = "hb2019")
 
 # Read in HSCP2019 estimates
 
 HSCP2019_pop_proj <- 
   pop_proj(filepath = glue("{base_filepath}/HSCP2019_pop_proj_{start}_{end}.rds"),
-           col_start = 7, col_end = 97)
+           col_start = 7, col_end = 97, variable = "hscp2019")
 
 
 ### 4 - Tidy Scotland data ----
@@ -124,7 +143,7 @@ HSCP2019_pop_proj <-
 
 scotland_pop_proj %<>% 
   mutate(Country = "S92000003") %>% 
-  select(Year, Country, Sex, AllAges, Age0:Age90plus)
+  select(Year, Country, Sex, SexQF, AllAges, Age0:Age90plus)
 
 # Write csv to open date projections folder
 
@@ -144,7 +163,7 @@ CA2019_pop_proj %<>%
   rename(CA = ca2019) %>% 
   mutate(CA = if_else(is.na(CA), "S92000003", CA), 
          CAQF = case_when(CA == "S92000003" ~ "d")) %>%
-  select(Year, CA, CAQF, Sex, AllAges, Age0:Age90plus)
+  select(Year, CA, CAQF, Sex, SexQF, AllAges, Age0:Age90plus)
 
 # Write as csv
 
@@ -165,7 +184,7 @@ HB2019_pop_proj %<>%
   rename(HB = hb2019) %>% 
   mutate(HB = if_else(is.na(HB), "S92000003", HB), 
          HBQF = case_when(HB == "S92000003" ~ "d")) %>%
-  select(Year, HB, HBQF, Sex, AllAges, Age0:Age90plus)
+  select(Year, HB, HBQF, Sex, SexQF, AllAges, Age0:Age90plus)
 
 # Write as csv
 
@@ -174,7 +193,7 @@ write_csv(HB2019_pop_proj, glue("{od_filepath}/HB_pop_proj_{date}.csv"),
 
 
 
-### 7 - Tidy HSCP2016 data ----
+### 7 - Tidy HSCP data ----
 
 # Rename hscp2016 to HSCP
 # Attach Scotland national code
@@ -186,7 +205,7 @@ HSCP2019_pop_proj %<>%
   rename(HSCP = hscp2019) %>% 
   mutate(HSCP = if_else(is.na(HSCP), "S92000003", HSCP), 
          HSCPQF = case_when(HSCP == "S92000003" ~ "d")) %>% 
-  select(Year, HSCP, HSCPQF, Sex, AllAges, Age0:Age90plus)
+  select(Year, HSCP, HSCPQF, Sex, SexQF, AllAges, Age0:Age90plus)
 
 # Write as csv
 
