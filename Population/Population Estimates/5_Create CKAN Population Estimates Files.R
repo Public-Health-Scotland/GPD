@@ -3,7 +3,7 @@
 # Calum Purdie
 # Original date 16/04/2019
 # Latest update author - Calum Purdie
-# Latest update date - 04/05/2020
+# Latest update date - 30/06/2020
 # Latest update description - formatting code
 # Type of script - Creation
 # Written/run on RStudio Desktop
@@ -56,6 +56,19 @@ geo_pop <- function(filepath, variable){
     spread(age, Pop) %>% 
     rename_at(4:94, function(x) paste("Age", x, sep=""))
   
+  # Create totals for male and female combined
+  
+  all_total <- geo_pop_est %>% 
+    group_by(Year, !!as.name(variable)) %>% 
+    summarise_at(vars(Age0:Age90), list(sum)) %>%
+    ungroup() %>% 
+    mutate(Sex = "All")
+  
+  # Add all_total to geo_pop_est
+  
+  geo_pop_est %<>% 
+    bind_rows(all_total)
+  
   # Group by Year and Sex for all single years of age
   
   Scot_total <- geo_pop_est %>%
@@ -63,15 +76,16 @@ geo_pop <- function(filepath, variable){
     summarise_at(vars(Age0:Age90), list(sum)) %>%
     ungroup()
   
-  # Add geo_pop_est and Scot_total
+  # Add Scot_total to geo_pop_est
   # Sum across all ages to get totals
   # Sort by Year, variable and Sex
   # Rename Age90 to Age90plus
-  # Reorder to set missing data (Scotland CA2011) first
+  # Reorder to set missing data first
   
   geo_pop_est %<>%
     full_join(Scot_total) %>%
-    mutate(AllAges = rowSums(.[4:94])) %>%
+    mutate(AllAges = rowSums(.[4:94]), 
+           SexQF = case_when(Sex == "All" ~ "d")) %>%
     arrange(Year, Sex) %>%
     rename(Age90plus = Age90) %>% 
     setorder(na.last = F)
@@ -111,7 +125,7 @@ CA2019_pop_est %<>%
   rename(CA = ca2019) %>% 
   mutate(CA = if_else(is.na(CA), "S92000003", CA), 
          CAQF = case_when(CA == "S92000003" ~ "d"))  %>%
-  select(Year, CA, CAQF, Sex, AllAges, Age0:Age90plus)
+  select(Year, CA, CAQF, Sex, SexQF, AllAges, Age0:Age90plus)
 
 # Write as csv
 
@@ -131,7 +145,7 @@ HB2019_pop_est %<>%
   rename(HB = hb2019) %>% 
   mutate(HB = if_else(is.na(HB), "S92000003", HB), 
          HBQF = case_when(HB == "S92000003" ~ "d")) %>%
-  select(Year, HB, HBQF, Sex, AllAges, Age0:Age90plus)
+  select(Year, HB, HBQF, Sex, SexQF, AllAges, Age0:Age90plus)
 
 # Write as csv
 
@@ -151,7 +165,7 @@ HSCP2019_pop_est %<>%
   rename(HSCP = hscp2019) %>% 
   mutate(HSCP = if_else(is.na(HSCP), "S92000003", HSCP), 
          HSCPQF = case_when(HSCP == "S92000003" ~ "d")) %>%
-  select(Year, HSCP, HSCPQF, Sex, AllAges, Age0:Age90plus)
+  select(Year, HSCP, HSCPQF, Sex, SexQF, AllAges, Age0:Age90plus)
 
 # Write as csv
 
