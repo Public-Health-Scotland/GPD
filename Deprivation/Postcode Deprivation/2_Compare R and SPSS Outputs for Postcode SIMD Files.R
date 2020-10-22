@@ -3,13 +3,13 @@
 # Calum Purdie
 # Original date 06/09/2018
 # Latest update author - Calum Purdie
-# Latest update date - 02/12/2019
+# Latest update date - 20/05/2020
 # Latest update description 
 # Type of script - Update
 # Written/run on RStudio Desktop
 # Version of R that the script was most recently run on - 3.5.1
 # Code for comparing R and SPSS files for postcode simd data
-# Approximate run time - 5 minutes
+# Approximate run time - 1 minutes
 ##########################################################
 
 ### 1 - Information ----
@@ -27,14 +27,20 @@ library(glue)
 
 # Set filepaths
 
-spss_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", 
-                           "Referencing & Standards", "GPD", "3_Deprivation", 
-                           "Postcode Deprivation", "Lookup Files")
-r_filepath <- file.path(spss_filepath, "R Files")
+spss_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
+                      "3_Deprivation/Postcode Deprivation/Lookup Files")
+r_filepath <- glue("{spss_filepath}/R Files")
+
+# Set version
+
+version <- "2020_2"
 
 # Set files to use
-pc_simd <- "postcode_2019_2_simd2016"
-pc_all <- "postcode_2019_2_all_simd_carstairs"
+
+pc_simd <- glue("postcode_{version}_simd2020v2")
+pc_all <- glue("postcode_{version}_all_simd_carstairs")
+
+
 
 ### 2 - postcode_simd ----
 
@@ -45,22 +51,28 @@ pc_all <- "postcode_2019_2_all_simd_carstairs"
 
 pc_simd_spss <- read_sav(glue("{spss_filepath}/{pc_simd}.sav"), 
                          user_na=F) %>%
+  clean_names() %>% 
+  rename(datazone2011 = data_zone2011, intzone2011 = int_zone2011) %>% 
   arrange(pc7) %>%
   zap_formats() %>%
   zap_widths() %>%
   remove_all_labels() %>% 
-  mutate_if(is.factor, as.character)
+  mutate_if(is.factor, as.character) %>% 
+  mutate_at(vars(dplyr::contains("_quintile")), as.integer) %>% 
+  mutate_at(vars(dplyr::contains("_decile")), as.integer)
 
 # Read in R file and sort by pc7
 # Remove geography name columns
 
 pc_simd_r <- readRDS(glue("{r_filepath}/{pc_simd}.rds")) %>% 
   arrange(pc7) %>% 
-  select(-c(DataZone2011Name, IntZone2011Name, HB2019Name, HSCP2019Name, 
-            CA2019Name))
+  select(-c(datazone2011name, intzone2011name, ca2019name, hscp2019name, 
+            hb2019name))
 
 # Compare datasets
 all_equal(pc_simd_spss, pc_simd_r)
+
+rm(pc_simd_spss, pc_simd_r)
 
 
 
@@ -80,25 +92,29 @@ all_equal(pc_simd_spss, pc_simd_r)
 # Round all values to 2 decimal places using round_half_up
 
 pc_all_spss <- read_sav(glue("{spss_filepath}/{pc_all}.sav")) %>%
+  clean_names() %>% 
+  rename(datazone2001_simd2004 = data_zone2001_simd2004, 
+         datazone2001_simd2006 = data_zone2001_simd2006,
+         datazone2001_simd2009v2 = data_zone2001_simd2009v2,
+         datazone2001_simd2012 = data_zone2001_simd2012,
+         datazone2011_simd2016 = data_zone2011_simd2016, 
+         datazone2011_simd2020v2 = data_zone2011_simd2020v2) %>% 
   arrange(pc7) %>%
   zap_formats() %>%
   zap_widths() %>%
-  remove_all_labels() %>% 
-  mutate(DataZone2001_simd2004 = na_if(DataZone2001_simd2004, ""), 
-         DataZone2001_simd2006 = na_if(DataZone2001_simd2006, ""),
-         DataZone2001_simd2009v2 = na_if(DataZone2001_simd2009v2, ""),
-         DataZone2001_simd2012 = na_if(DataZone2001_simd2012, ""),
-         DataZone2011_simd2016 = na_if(DataZone2011_simd2016, "")) %>% 
+  remove_all_labels() %<>%
   mutate_if(is.factor, as.character) %>% 
+  mutate_if(is.character, list(~na_if(., ""))) %>% 
   mutate_if(is.numeric, round_half_up, 2)
 
 # Read in R file and sort by pc7
-# Remove DataZone2011Name column as this is not in the SPSS file
+# Remove dz2011name column as this is not in the SPSS file
 # Round all values to 2 decimal places using round_half_up
+# This changes integers to numeric, change them back to integers
 
 pc_all_r <- readRDS(glue("{r_filepath}/{pc_all}.rds")) %>% 
   arrange(pc7) %>% 
-  select(-DataZone2011Name) %>% 
+  select(-datazone2011name) %>% 
   mutate_if(is.numeric, round_half_up, 2)
 
 all_equal(pc_all_spss, pc_all_r)

@@ -542,7 +542,7 @@ rm(simd2020v2_hscp2019_shetland, simd2020v2_hscp2019_unchanged)
 
 
 
-### 8 - Calculate simd2020 Council Area Level Population Weighted Categories ----
+### 8 - Calculate SIMD 2020 Council Area Level Population Weighted Categories ----
 
 # Match simd2020 file onto ca2019_pop
 # Arrange by council area and simd rank
@@ -721,7 +721,8 @@ saveRDS(DZ2011_simd2020v2, glue("{simd_lookup}/DataZone2011_simd2020v2.rds"))
 
 # Save DZ2011_simd2020 as csv
 
-write_csv(DZ2011_simd2020v2, glue("{simd_lookup}/DataZone2011_simd2020v2.csv"))
+write_csv(DZ2011_simd2020v2, glue("{simd_lookup}/DataZone2011_simd2020v2.csv"), 
+          na = "")
 
 # Save DZ2011_simd2020 as sav
 
