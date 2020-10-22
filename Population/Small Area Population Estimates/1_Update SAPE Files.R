@@ -3,7 +3,7 @@
 # Calum Purdie
 # Original date 24/08/2018
 # Latest update author - Calum Purdie
-# Latest update date - 05/06/2020
+# Latest update date - 28/08/2020
 # Latest update description 
 # Type of script - Creation
 # Written/run on RStudio Desktop
@@ -43,18 +43,23 @@ simd2016_filepath <- glue("{base_filepath}/3_Deprivation/SIMD/Lookup Files/",
 
 date <- strftime(Sys.Date(), format = "%d%m%Y")
 
+# Set years
+
+new <- 2019
+old <- 2018
+
 # Set datasets to use
 
-female_2018_pop <- "Datazone2011_2018_f"
-male_2018_pop <- "Datazone2011_2018_m"
-datazone_simd2016 <- "DataZone2011_simd2016"
-datazone_simd2020v2 <- "DataZone2011_simd2020v2"
-prev_dz_estimates <- "DataZone2011_pop_est_2011_2017"
-prev_dz_estimates_5y <- "DataZone2011_pop_est_5year_agegroups_2011_2017"
-new_dz_estimates <- "DataZone2011_pop_est_2011_2018"
-new_dz_estimates_5y <- "DataZone2011_pop_est_5year_agegroups_2011_2018"
-new_iz_estimates <- "IntZone2011_pop_est_2011_2018"
-new_iz_estimates_5y <- "IntZone2011_pop_est_5year_agegroups_2011_2018"
+female_pop <- glue("sape-{new}-females")
+male_pop <- glue("sape-{new}-males")
+datazone_simd2016 <- glue("DataZone2011_simd2016")
+datazone_simd2020v2 <- glue("DataZone2011_simd2020v2")
+prev_dz_estimates <- glue("DataZone2011_pop_est_2011_{old}")
+prev_dz_estimates_5y <- glue("DataZone2011_pop_est_5year_agegroups_2011_{old}")
+new_dz_estimates <- glue("DataZone2011_pop_est_2011_{new}")
+new_dz_estimates_5y <- glue("DataZone2011_pop_est_5year_agegroups_2011_{new}")
+new_iz_estimates <- glue("IntZone2011_pop_est_2011_{new}")
+new_iz_estimates_5y <- glue("IntZone2011_pop_est_5year_agegroups_2011_{new}")
 
 
 
@@ -66,7 +71,7 @@ read_data <- function(pop_data, pop_year, pop_gender){
                      sheet = 1, range = "A6:CR6982") %>% 
     mutate(Year = pop_year) %>%
     mutate(Sex = pop_gender) %>% 
-    select(-c(DataZone2011Name, CouncilArea2018Name, ...5)) %>% 
+    select(-c(DataZone2011Name, CouncilArea2019Name, ...5)) %>% 
     set_names(., c("datazone2011", "total_pop", "age0", "age1", "age2", 
                    "age3", "age4", "age5", "age6", "age7", "age8", "age9", 
                    "age10", "age11", "age12", "age13", "age14", "age15", 
@@ -88,11 +93,11 @@ read_data <- function(pop_data, pop_year, pop_gender){
 
 # Read in female data
 
-female <- read_data(female_2018_pop, 2018, "F")
+female <- read_data(female_pop, new, "F")
 
 # Read in male data
 
-male <- read_data(male_2018_pop, 2018, "M")
+male <- read_data(male_pop, new, "M")
 
 # Combine the lists into one dataframe
 
@@ -105,11 +110,9 @@ male_and_female <- bind_rows(female, male)
 # Read in previous years file
 # Drop higher geographies and SIMD variables as we add these on later
 
-dz2011_pop_est <- readRDS(glue("{lookup_filepath}/Archive/", 
+dz2011_pop_est <- readRDS(glue("{lookup_filepath}/", 
                                "{prev_dz_estimates}.rds")) %>% 
-  select(Year:total_pop) %>% 
-  clean_names() %>% 
-  rename(datazone2011 = data_zone2011)
+  select(year:datazone2011, sex:total_pop)
 
 # Combine previous years data with new data
 
@@ -161,11 +164,10 @@ saveRDS(dz2011_pop_est, glue("{lookup_filepath}/{new_dz_estimates}.rds"))
 # Read in latest 5 year age group file
 # Drop higher geographies and SIMD variables as we add these on later
 
-dz2011_pop_est_5y <- readRDS(glue("{lookup_filepath}/Archive/", 
+dz2011_pop_est_5y <- readRDS(glue("{lookup_filepath}/", 
                                   "{prev_dz_estimates_5y}.rds")) %>% 
-  select(Year:total_pop) %>% 
-  clean_names() %>% 
-  rename(datazone2011 = data_zone2011)
+  select(year:datazone2011, sex:total_pop)
+
 
 # Compute age groups for male_and_female
 
@@ -268,7 +270,7 @@ data_check <- function(input, column){
   input %>% 
     group_by(!!as.name(column)) %>% 
     count() %>% 
-    filter(n != 16) %>% 
+    filter(n != 18) %>% 
     print()
   
   # Check sums add up to total_pop

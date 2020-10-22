@@ -3,7 +3,7 @@
 # Calum Purdie
 # Original date 05/06/2020
 # Latest update author - Calum Purdie
-# Latest update date - 01/07/2020
+# Latest update date - 01/09/2020
 # Latest update description 
 # Type of script - Creation
 # Written/run on RStudio Desktop
@@ -38,12 +38,16 @@ od_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Publications/",
 
 date <- strftime(Sys.Date(), format = "%d%m%Y")
 
+# Set new year
+
+year <- 2019
+
 # Set datasets to use
 
-new_dz_estimates <- "DataZone2011_pop_est_2011_2018"
-new_dz_estimates_5y <- "DataZone2011_pop_est_5year_agegroups_2011_2018"
-new_iz_estimates <- "IntZone2011_pop_est_2011_2018"
-new_iz_estimates_5y <- "IntZone2011_pop_est_5year_agegroups_2011_2018"
+new_dz_estimates <- glue("DataZone2011_pop_est_2011_{year}")
+new_dz_estimates_5y <- glue("DataZone2011_pop_est_5year_agegroups_2011_{year}")
+new_iz_estimates <- glue("IntZone2011_pop_est_2011_{year}")
+new_iz_estimates_5y <- glue("IntZone2011_pop_est_5year_agegroups_2011_{year}")
 dz_estimates_2001_2010 <- "DataZone2011_pop_est_2001_2010"
 iz_estimates_2001_2010 <- "IntZone2011_pop_est_2001_2010"
 
@@ -108,6 +112,7 @@ dz2011_pop_est_od %<>%
   arrange(Year, Sex) %>%
   setorder(na.last = F)
 
+
 ### 2.3 - Tidy dz2011_pop_est_od ----
 
 # Attach Scotland national code
@@ -132,7 +137,8 @@ fwrite(dz2011_pop_est_od, glue("{od_filepath}/DZ2011-pop-est_{date}.csv"),
 
 # Read in current intermediate zone estimates and select relevant columns
 
-iz2011_pop_est <- readRDS(glue("{lookup_filepath}/{new_iz_estimates}.rds"))
+iz2011_pop_est <- readRDS(glue("{lookup_filepath}/{new_iz_estimates}.rds")) %>% 
+  select(-intzone2011name)
 
 # Need to add in the rebased 2001 - 2010 iz estimates for the open data file
 # It was agreed to keep all estimates in one open data file for consistency

@@ -1,25 +1,18 @@
-### 1 - Information ----
-
-# Codename - Update Datamart Small Area Population Estimates
+##########################################################
+# Update Datamart Small Area Population Estimates
 # Original Author - Calum Purdie
-# Original Date - 31/10/2019
-# Updated - 04/11/2019
-# Updated - 
-# Type - Updating files
-# Written/run on - R Studio Desktop 
-# Version - 3.5.1
-#
-# install.packages("magrittr")
-# install.packages("tidyr")
-# install.packages("dplyr")
-# install.packages("tidylog")
-# install.packages("readr")
-# install.packages("glue")
-# install.packages("xfun")
-#
-# Description - Code for updating small area population estimates in the 
-#               Populations Datamart.
+# Original date 31/10/2019
+# Latest update author - Calum Purdie
+# Latest update date - 02/09/2020
+# Latest update description - formatting code
+# Type of script - Update
+# Written/run on RStudio Desktop
+# Version of R that the script was most recently run on - 3.5.1
+# Code for updating small area population estimates in the Populations Datamart
 # Approximate run time - 30 minutes
+##########################################################
+
+### 1 - Housekeeping ----
 
 library(magrittr)
 library(tidyr)
@@ -31,14 +24,14 @@ library(xfun)
 
 # Set filepaths
 
-base_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", 
-                           "Referencing & Standards", "GPD", "2_Population")
-lookups_filepath <- file.path(base_filepath, "Small Area Population estimates", 
-                              "Lookup Files", "R Files")
-templates_filepath <- file.path(base_filepath, "Population Datamart", 
-                                "Creation of Files", "Templates", "R Templates")
-datamart_filepath <- file.path(base_filepath, "Population Datamart", 
-                               "Lookup Files", "Other Geographies")
+base_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
+                      "2_Population")
+lookups_filepath <- glue("{base_filepath}/Small Area Population estimates/", 
+                         "Lookup Files/R Files")
+templates_filepath <- glue("{base_filepath}/Population Datamart/", 
+                           "Creation of Files/Templates/R Templates")
+datamart_filepath <- glue("{base_filepath}/Population Datamart/Lookup Files/", 
+                          "Other Geographies")
 
 # Set date for filenames
 
@@ -73,7 +66,8 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
       filter(year == i) %>% 
       gather(Age_Band, Population, "age0":"age90plus") %>% 
       mutate(Age_Band = gsub("age", "", Age_Band), 
-             Age_Band = recode(Age_Band, "90plus" = "90")) %>% 
+             Age_Band = recode(Age_Band, "90plus" = "90"), 
+             sex = recode(sex, "M" = "1", "F" = "2")) %>% 
       rename(Year = year, 
              Gender = sex, 
              Data_Zone = datazone2011, 
@@ -128,8 +122,8 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
 
 ### 3 - Data Zone ----
 
-datamart_output(start = "2018", end = "2018", 
+datamart_output(start = "2019", end = "2019", 
                 pop_name = "Data Zone 2011 Population Estimates", 
-                file = "DataZone2011_pop_est_2011_2018.rds", 
+                file = "DataZone2011_pop_est_2011_2019.rds", 
                 file_name = "DATAZONE2011_ESTIMATES", 
                 template = "Template_DZ2011_estimates.rds")

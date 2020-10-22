@@ -3,7 +3,7 @@
 # Calum Purdie
 # Original date 31/05/2019
 # Latest update author - Calum Purdie
-# Latest update date - 05/06/2020
+# Latest update date - 28/08/2020
 # Latest update description 
 # Type of script - Check
 # Written/run on RStudio Desktop
@@ -29,6 +29,10 @@ SPSS_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/",
                       "2_Population/Small Area Population Estimates/", 
                       "Lookup Files")
 R_filepath <- glue("{SPSS_filepath}/R Files")
+
+# Set new year
+
+year <- 2019
 
 
 
@@ -56,13 +60,13 @@ compare_DZ <- function(SPSS, R){
 
 # Compare Data Zone Single Year Files
 
-DataZone <- compare_DZ("DataZone2011_pop_est_2011_2018.sav", 
-                       "DataZone2011_pop_est_2011_2018.rds")
+DataZone <- compare_DZ(glue("DataZone2011_pop_est_2011_{year}.sav"), 
+                       glue("DataZone2011_pop_est_2011_{year}.rds"))
 
 # Compare Data Zone 5 Year Age Group Files
 
-DataZone_5y <- compare_DZ("DataZone2011_pop_est_5year_agegroups_2011_2018.sav", 
-                          "DataZone2011_pop_est_5year_agegroups_2011_2018.rds")
+DataZone_5y <- compare_DZ(glue("DataZone2011_pop_est_5year_agegroups_2011_{year}.sav"), 
+                          glue("DataZone2011_pop_est_5year_agegroups_2011_{year}.rds"))
 
 
 
@@ -89,11 +93,11 @@ compare_IZ <- function(SPSS, R){
 
 # Compare Int Zone Single Year Files
 
-IntZone <- compare_IZ("IntZone2011_pop_est_2011_2018.sav", 
-                      "IntZone2011_pop_est_2011_2018.rds")
+IntZone <- compare_IZ(glue("IntZone2011_pop_est_2011_{year}.sav"), 
+                      glue("IntZone2011_pop_est_2011_{year}.rds"))
 
 # Compare Int Zone 5 Year Age Group Files
 
-IntZone_5y <- compare_IZ("IntZone2011_pop_est_5year_agegroups_2011_2018.sav", 
-                         "IntZone2011_pop_est_5year_agegroups_2011_2018.rds")
+IntZone_5y <- compare_IZ(glue("IntZone2011_pop_est_5year_agegroups_2011_{year}.sav"), 
+                         glue("IntZone2011_pop_est_5year_agegroups_2011_{year}.rds"))
 
