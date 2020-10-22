@@ -6,9 +6,9 @@ library(dplyr)
 
 # Calculate populations for geography
 
-pop_function <- function(column, new_column){
+pop_function <- function(data, column, new_column){
   
-  DZ2011_pop_est %>% 
+  data %>% 
     group_by(!!as.name(column)) %>% 
     summarise(!!new_column := sum(total_pop)) %>% 
     ungroup()

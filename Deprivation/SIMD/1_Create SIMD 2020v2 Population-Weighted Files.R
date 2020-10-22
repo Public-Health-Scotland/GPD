@@ -68,7 +68,7 @@ source(here::here("Deprivation", "SIMD", "Functions for Creating SIMD Files.R"))
 # Select only 2017 population estimates as these are the populations SIMD 2020 
 # is based on
 
-DZ2011_pop_est <- readRDS(glue("{pop_archive}/", 
+dz2011_pop_est <- readRDS(glue("{pop_archive}/", 
                                 "DataZone2011_pop_est_2011_2017.rds")) %>% 
   filter(Year == 2017) %>% 
   clean_names() %>% 
@@ -104,14 +104,14 @@ dz_iz <- dplyr::tbl(src = ckan$con, from = res_id) %>%
 # Sort by DataZone2011 for matching
 # Create a Scotland flag
 
-DZ2011_pop_est %<>%
+dz2011_pop_est %<>%
   arrange(datazone2011) %>%
   left_join(dz_iz) %>% 
   mutate(scot = 1)
 
 # Select relevant geography names
 
-geo_names <- DZ2011_pop_est %>% 
+geo_names <- dz2011_pop_est %>% 
   select(datazone2011, datazone2011name, intzone2011, intzone2011name, 
          ca2019, ca2019name, ca2018, ca2011, hscp2019, hscp2019name, hscp2018, 
          hscp2016, hb2019, hb2019name, hb2018, hb2014) %>% 
@@ -123,23 +123,23 @@ geo_names <- DZ2011_pop_est %>%
 
 # scotland
 
-scotland_pop <- pop_function("scot", "scot_pop")
+scotland_pop <- pop_function(dz2011_pop_est, "scot", "scot_pop")
 
 # hb2019
 
-hb2019_pop <- pop_function("hb2019", "hb2019_pop")
+hb2019_pop <- pop_function(dz2011_pop_est, "hb2019", "hb2019_pop")
 
 # hscp2019
 
-hscp2019_pop <- pop_function("hscp2019", "hscp2019_pop")
+hscp2019_pop <- pop_function(dz2011_pop_est, "hscp2019", "hscp2019_pop")
 
 # ca2019
 
-ca2019_pop <- pop_function("ca2019", "ca2019_pop")
+ca2019_pop <- pop_function(dz2011_pop_est, "ca2019", "ca2019_pop")
 
 # dz2011
 
-dz2011_pop <- pop_function("datazone2011", "datazone2011_pop")
+dz2011_pop <- pop_function(dz2011_pop_est, "datazone2011", "datazone2011_pop")
 
 
 
@@ -663,7 +663,7 @@ rm(simd2020v2_ca2019_shetland, simd2020v2_ca2019_unchanged)
 
 # Match hb2019, hscp2019, ca2019 and simd_domains files onto simd2020
 
-DZ2011_simd2020v2 <- simd2020 %>%
+dz2011_simd2020v2 <- simd2020 %>%
   left_join(simd2020v2_hb2019) %>%
   left_join(simd2020v2_hscp2019) %>%
   left_join(simd2020v2_ca2019) %>%
@@ -671,7 +671,7 @@ DZ2011_simd2020v2 <- simd2020 %>%
 
 # Rename variables
 
-DZ2011_simd2020v2 %<>%
+dz2011_simd2020v2 %<>%
   rename(simd2020v2_inc_rate = income_rate, 
          simd2020v2_inc_dep_n = income_count, 
          simd2020v2_inc_rank = simd2020v2_income_domain_rank, 
@@ -689,7 +689,7 @@ DZ2011_simd2020v2 %<>%
 
 # Select relevant variables
 
-DZ2011_simd2020v2 %<>%
+dz2011_simd2020v2 %<>%
   select(datazone2011, datazone2011name, intzone2011, intzone2011name, 
          hb2019, hb2019name, hb2018, hb2014, hscp2019, hscp2019name, hscp2018, 
          hscp2016, ca2019, ca2019name, ca2018, ca2011, simd2020v2_rank, 
@@ -705,31 +705,31 @@ DZ2011_simd2020v2 %<>%
 
 # Round simd2020v2_crime_rate and simd2020v2_crime_count to 6 decimal places
 
-DZ2011_simd2020v2 %<>%
+dz2011_simd2020v2 %<>%
   mutate(simd2020v2_crime_rate = round_half_up(as.numeric(simd2020v2_crime_rate), 6), 
          simd2020v2_crime_count = round_half_up(as.numeric(simd2020v2_crime_count), 6))
 
 # Format quintiles and deciles columns to be integers
 
-DZ2011_simd2020v2 %<>%
+dz2011_simd2020v2 %<>%
   mutate_at(vars(dplyr::contains("_quintile")), as.integer) %>% 
   mutate_at(vars(dplyr::contains("_decile")), as.integer)
 
-# Save DZ2011_simd2020 as rds
+# Save dz2011_simd2020v2 as rds
 
-saveRDS(DZ2011_simd2020v2, glue("{simd_lookup}/DataZone2011_simd2020v2.rds"))
+saveRDS(dz2011_simd2020v2, glue("{simd_lookup}/DataZone2011_simd2020v2.rds"))
 
-# Save DZ2011_simd2020 as csv
+# Save dz2011_simd2020v2 as csv
 
-write_csv(DZ2011_simd2020v2, glue("{simd_lookup}/DataZone2011_simd2020v2.csv"), 
+write_csv(dz2011_simd2020v2, glue("{simd_lookup}/DataZone2011_simd2020v2.csv"), 
           na = "")
 
-# Save DZ2011_simd2020 as sav
+# Save dz2011_simd2020v2 as sav
 
-DZ2011_simd2020v2_spss <- spss_names(DZ2011_simd2020v2)
+dz2011_simd2020v2_spss <- spss_names(dz2011_simd2020v2)
 
-write_sav(DZ2011_simd2020v2_spss, 
+write_sav(dz2011_simd2020v2_spss, 
           glue("{simd_lookup}/DataZone2011_simd2020v2.sav"))
 
 rm(simd2020, simd2020v2_ca2019, simd2020v2_hb2019, simd2020v2_hscp2019, 
-   DZ2011_simd2020v2_spss)
+   dz2011_simd2020v2_spss)
