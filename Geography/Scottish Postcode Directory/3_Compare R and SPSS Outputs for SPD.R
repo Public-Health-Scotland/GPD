@@ -94,7 +94,7 @@ SPD_SPSS %<>%
   mutate(locality_2001 = str_pad(locality_2001, 6, pad = "0"), 
          settlement_2001 = str_pad(settlement_2001, 3, pad = "0"), 
          locality_1991 = str_pad(locality_1991, 3, pad = "0"), 
-         islands_2016 = str_pad(islands_2016, 3, pad = "0"))
+         islands_2020 = str_pad(islands_2020, 3, pad = "0"))
 
 # Change all integer columns to numeric in R file
 # Round latitude and longitude columns to 2 decimal places using round_half_up()

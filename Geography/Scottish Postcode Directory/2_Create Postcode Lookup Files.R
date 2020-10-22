@@ -4,7 +4,7 @@
 # Original date 07/08/2018
 # Data release - Scottish Postcode Directory
 # Latest update author - Calum Purdie
-# Latest update date - 19/05/2020
+# Latest update date - 07/08/2020
 # Latest update description 
 # Type of script - Preparation
 # Written/run on RStudio Desktop
@@ -28,7 +28,7 @@ library(ckanr)
 
 # Set version to use
 
-version <- "2020_1"
+version <- "2020_2"
 
 # Update filepaths for new version
 
@@ -101,7 +101,7 @@ spd %<>%
          pop2001 = CensusPopulationCount2001,
          hhc1991 = CensusHouseholdCount1991,
          pop1991 = CensusPopulationCount1991,
-         simd2016_rank = ScottishIndexOfMultipleDeprivation2016Rank,
+         simd2020v2_rank = ScottishIndexOfMultipleDeprivation2020Rank,
          lau_level1_2019 = LAU2019Level1Code,
          nuts_level2_2018 = NUTS2018Level2Code,
          nuts_level3_2018 = NUTS2018Level3Code,
@@ -112,7 +112,7 @@ spd %<>%
          settlement_2001 = Settlement2001Code,
          civil_parish_1930 = CivilParish1930Code,
          ent_region_2008 = EnterpriseRegion2008Code,
-         islands_2016 = Islands2016Code,
+         islands_2020 = Islands2020Code,
          lgd_1995 = LocalGovernmentDistrict1995Code,
          lgd_1991 = LocalGovernmentDistrict1991Code,
          nat_park_2010 = NationalPark2010Code,
@@ -131,7 +131,9 @@ spd %<>%
          hscp2016 = IntegrationAuthority2016Code,
          ca2018 = CouncilArea2018Code, 
          hb2018 = HealthBoardArea2018Code,
-         hscp2018 = IntegrationAuthority2018Code)
+         hscp2018 = IntegrationAuthority2018Code, 
+         ur2_2016 = UrbanRural2Fold2016Code, 
+         ur3_2016 = UrbanRural3Fold2016Code)
 
 
 
@@ -152,7 +154,7 @@ spd %<>%
   mutate(locality_2001 = str_pad(locality_2001, 6, pad = "0"), 
          settlement_2001 = str_pad(settlement_2001, 3, pad = "0"), 
          locality_1991 = str_pad(locality_1991, 3, pad = "0"), 
-         islands_2016 = str_pad(islands_2016, 3, pad = "0"))
+         islands_2020 = str_pad(islands_2020, 3, pad = "0"))
 
 # Create 7 character postcode variable
 
@@ -162,28 +164,9 @@ spd %<>%
                          nchar(pc8) == 8 ~ gsub(" ", "", pc8))) %>%
   arrange(pc7, desc(date_of_introduction), date_of_deletion)
 
-##### 2020_1 ONE OFF #####
-
-# Calum noticed an issue with TD6 9LQ's Intermediate Zone
-# This postcode's intermediate zone has changed from S02002301 to S02002296 but 
-# all other postcode in it's data zone (S01012292) have stayed within S02002301
-# NRS agree this is a mistake and can be manually fixed as a one off for 2020_1
-
-spd %<>%
-  mutate(intzone2011 = case_when(pc7 == "TD6 9LQ" ~ "S02002301", 
-                                 TRUE ~ intzone2011))
-
-# Join on UR2 and UR3 columns from postcode lookup
-
-UR_lookup <- read_excel(glue("{data_filepath}/ISD_UR16 2 and 3 Fold.xlsx")) %>% 
-  rename(pc8 = Postcode, 
-         ur2_2016 = UrbanRural2Fold2016Code, 
-         ur3_2016 = UrbanRural3Fold2016Code)
-
 # Add in UR name columns
 
 spd %<>% 
-  left_join(UR_lookup) %>% 
   mutate(ur2_2016_name = case_when(ur2_2016 == 1 ~ "1 Urban Areas", 
                                    ur2_2016 == 2 ~ "2 Rural Areas"),
          ur3_2016_name = case_when(ur3_2016 == 1 ~ "1 Rest of Scotland", 
@@ -203,20 +186,6 @@ spd %<>%
                                    ur8_2016 == 6 ~ "6 Accessible Rural",
                                    ur8_2016 == 7 ~ "7 Remote Rural", 
                                    ur8_2016 == 8 ~ "8 Very Remote Rural"))
-
-# # Join on SIMD 2020 from postcode lookup
-# 
-# simd_lookup <- read_excel(glue("{data_filepath}/ISD_SIMD2020.xlsx")) %>% 
-#   rename(pc8 = Postcode, 
-#          simd2020_rank = ScottishIndexOfMultipleDeprivation2020Rank)
-
-# Join on SIMD 2020 from DataZone2011_simd2020v2 lookup
-
-simd_lookup <- readRDS(glue("{simd_filepath}/DataZone2011_simd2020v2.rds")) %>% 
-  select(datazone2011, simd2020v2_rank)
-
-spd %<>% 
-  left_join(simd_lookup)
 
 # Set all blank cells as NA in R file
 
@@ -262,44 +231,45 @@ iz_names <- dplyr::tbl(src = ckan$con, from = res_id) %>%
 
 # Set url and id
 
-res_id <- "2dab0c9d-09be-4266-97f8-4f83e78db85f"
+res_id <- "967937c4-8d67-4f39-974f-fd58c4acfda5"
 
 ca_names <- dplyr::tbl(src = ckan$con, from = res_id) %>% 
+  filter(is.na(CADateArchived)) %>% 
   select(CA, CAName) %>% 
-  rename(ca2019 = CA, ca2019name = CAName) %>%  
-  as_tibble()
+  rename(ca2019 = CA, ca2019name = CAName) %>%
+  as_tibble() %>% 
+  distinct()
 
 
 # Add column for hscp2019name
 
 # Set url and id
 
-res_id <- "ccfeea67-2407-413c-9676-01c03527046a"
+res_id <- "944765d7-d0d9-46a0-b377-abb3de51d08e"
 
 hscp_names <- dplyr::tbl(src = ckan$con, from = res_id) %>% 
+  filter(is.na(HSCPDateArchived)) %>% 
   select(HSCP, HSCPName) %>% 
   rename(hscp2019 = HSCP, hscp2019name = HSCPName) %>%  
-  as_tibble()
+  as_tibble() %>% 
+  distinct()
 
 
 # Add column for hb2019name
 
 # Set url and id
 
-res_id <- "f177be64-e94c-4ddf-a2ee-ea58d648d55a"
+res_id <- "652ff726-e676-4a20-abda-435b98dd7bdc"
 
 hb_names <- dplyr::tbl(src = ckan$con, from = res_id) %>% 
+  filter(is.na(HBDateArchived)) %>% 
   select(HB, HBName) %>% 
   rename(hb2019 = HB, hb2019name = HBName) %>%  
-  as_tibble()
+  as_tibble() %>% 
+  distinct()
 
 
-# Join the name columns onto the spd by DataZone2011
-# As a result of the 2019 boundary change, there are 8 postcodes moving from 
-# Glasgow City to North Lanarkshire
-# We need to manually recode the name columns for these postcodes as matching
-# on by DataZone2011 uses the old geography names, i.e. Lanarkshire codes but
-# Glasgow names
+# Join the name columns onto the spd
 
 spd %<>%
   left_join(dz_names) %>%

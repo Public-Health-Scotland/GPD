@@ -4,8 +4,8 @@
 # Original date 06/08/2018
 # Data release - Scottish Postcode Directory
 # Latest update author - Calum Purdie
-# Latest update date - 19/05/2020
-# Latest update description - 2020_1 update
+# Latest update date - 07/08/2020
+# Latest update description - 2020_2 update
 # Type of script - Preparation
 # Written/run on RStudio Desktop
 # Version of R that the script was most recently run on - 3.5.1
@@ -21,12 +21,15 @@ library(magrittr)
 library(tidyr)
 library(dplyr)
 library(tidylog)
+library(janitor)
 library(glue)
+library(readr)
+library(data.table)
 
 # Set version to use
 
-version <- "2020_1"
-prev_version <- "2019_2"
+version <- "2020_2"
+prev_version <- "2020_1"
 
 # Set filepath
 
@@ -42,24 +45,34 @@ prev_data_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/",
 ### 2 - Combine Single Record Files ----
 
 # Import Scottish Postcode Directory
-# 2020_1 version split into three parts
+# 2020_2 version split into three parts
 # Use read.csv as read_csv and fread produced a couple of errors to do with
 # decimals
+# SingleRecord - A and SingleRecord - B both contained multiple empty rows
+# Convert all "" to NA and then remove all empty rows
 # Sort cases by Postcode
 
-file_a <- read.csv(glue("{data_filepath}/SingleRecordA.csv"), 
-                   stringsAsFactors = F)
-file_b <- read.csv(glue("{data_filepath}/SingleRecordB.csv"), 
-                   stringsAsFactors = F)
-file_c <- read.csv(glue("{data_filepath}/SingleRecordC.csv"), 
-                   stringsAsFactors = F)
+file_a <- read.csv(glue("{data_filepath}/SingleRecord - A.csv"), 
+                   stringsAsFactors = F) %>% 
+  mutate_all(., ~na_if(.,"")) %>% 
+  remove_empty("rows")
+
+file_b <- read.csv(glue("{data_filepath}/SingleRecord - B.csv"), 
+                   stringsAsFactors = F) %>% 
+  mutate_all(., ~na_if(.,"")) %>% 
+  remove_empty("rows")
+  
+file_c <- read.csv(glue("{data_filepath}/SingleRecord - C.csv"), 
+                   stringsAsFactors = F) %>% 
+  mutate_all(., ~na_if(.,"")) %>% 
+  remove_empty("rows")
 
 spd <- bind_rows(file_a, file_b, file_c) %>% 
   arrange(Postcode)
 
 # Save combined file
 
-write_csv(spd, glue("{data_filepath}/SingleRecord.csv"))
+fwrite(spd, glue("{data_filepath}/SingleRecord.csv"))
 
 rm(file_a, file_b, file_c)
 
@@ -95,22 +108,25 @@ spd <- read.csv(glue("{data_filepath}/SingleRecord.csv"),
 # 2019_1.5 = 222,930
 # 2019_2 = 223,286
 # 2020_1 = 223,821
+# 2020_1 = 224,174
 
 # Postcode Type - expected around  S (80%) L (20%) - compare with previous numbers
-# 2014_1 S (81.0%) L (19.0%).
-# 2014_2 S (81.0%) L (19.0%).
-# 2015_1 S (81.0%) L (19.0%).
-# 2015_2 S (81.0%) L (19.0%).
-# 2016_1 S (81.0%) L (19.0%).
-# 2016_2 S (80.6%) L (18.4%).
-# 2017_1 S (81.6%) L (18.4%).
-# 2017_2 S (81.6%) L (18.4%).
-# 2018_1 S (81.6%) L (18.4%).
-# 2018_1.5 S (81.6%) L (18.4%).
-# 2018_2 S (81.6%) L (18.4%).
-# 2019_1 S (81.6%) L (18.4%).
-# 2019_1.5 S (81.6%) L (18.4%).
-# 2019_2 S (81.6%) L (18.4%).
+# 2014_1 S (81.0%) L (19.0%)
+# 2014_2 S (81.0%) L (19.0%)
+# 2015_1 S (81.0%) L (19.0%)
+# 2015_2 S (81.0%) L (19.0%)
+# 2016_1 S (81.0%) L (19.0%)
+# 2016_2 S (80.6%) L (18.4%)
+# 2017_1 S (81.6%) L (18.4%)
+# 2017_2 S (81.6%) L (18.4%)
+# 2018_1 S (81.6%) L (18.4%)
+# 2018_1.5 S (81.6%) L (18.4%)
+# 2018_2 S (81.6%) L (18.4%)
+# 2019_1 S (81.6%) L (18.4%)
+# 2019_1.5 S (81.6%) L (18.4%)
+# 2019_2 S (81.6%) L (18.4%)
+# 2020_1 S (81.6%) L (18.4%)
+# 2020_2 S (81.6%) L (18.4%)
 
 spd %>% 
   group_by(PostcodeType) %>% 
