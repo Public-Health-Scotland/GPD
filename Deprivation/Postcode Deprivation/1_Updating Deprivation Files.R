@@ -4,7 +4,7 @@
 # Original date 15/08/2018
 # Latest update author - Calum Purdie
 # Latest update date - 10/08/2020
-# Latest update description - 2020_1 SPD update
+# Latest update description - 2020_2 SPD update
 # Type of script - Update
 # Written/run on RStudio Desktop
 # Version of R that the script was most recently run on - 3.5.1
