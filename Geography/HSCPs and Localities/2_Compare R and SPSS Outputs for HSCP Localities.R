@@ -3,7 +3,7 @@
 # Calum Purdie
 # Original date 16/12/2019
 # Latest update author - Calum Purdie
-# Latest update date - 16/12/2019
+# Latest update date - 26/08/2020
 # Latest update description 
 # Type of script - Update
 # Written/run on RStudio Desktop
@@ -24,9 +24,9 @@ library(janitor)
 
 filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
                  "1_Geography/HSCPs and Localities/Lookup Files/Locality/", 
-                 "Update in 2019-12") 
+                 "Update in 2020-08") 
 
-lookup <- "HSCP Localities_DZ11_Lookup_20191216" 
+lookup <- "HSCP Localities_DZ11_Lookup_20200825" 
 
 
 
@@ -41,12 +41,13 @@ spss_lookup <- read_sav(glue("{filepath}/{lookup}.sav"), user_na=F) %>%
   zap_widths() %>%
   remove_all_labels() %>% 
   mutate_if(is.factor, as.character) %>% 
-  clean_names()
+  clean_names() %>% 
+  rename(datazone2011 = data_zone2011)
 
 # Read in R file
 
 r_lookup <- readRDS(glue("{filepath}/{lookup}.rds")) %>% 
-  select(-c(data_zone2011name))
+  select(-c(datazone2011name))
 
 # Compare files
 

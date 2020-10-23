@@ -1,26 +1,20 @@
-### 1 - Information ----
-
-# Codename - Create HSCP Population Estimates Files
+##########################################################
+# Create HSCP Population Estimates Files
+# Tina Fu
+# Original date - 05/03/2018
 # Data release - Mid-year HSCP Population Estimates
-# Original Author - Tina Fu
-# Original Date - 05/03/2018
-# Updated - 05/11/2019
-# Type - Creation
-# Written/run on - R Studio Desktop 
-# Version - 3.5.1
-#
-# install.packages("magrittr")
-# install.packages("readxl")
-# install.packages("tidyr")
-# install.packages("dplyr")
-# install.packages("readr")
-# install.packages("tidylog")
-# install.packafes("glue")
-#
-# Description - Code for creating HSCP population estimates files 
-#               based on mid-year estimates released by NRS
-#
-# Approximate run time - 14 seconds
+# Latest update author - Calum Purdie
+# Latest update date - 01/05/2020
+# Latest update description - 2019 estimates
+# Type of script - Creation
+# Written/run on RStudio Desktop
+# Version of R that the script was most recently run on - 3.5.1
+# Code for creating HSCP population estimates files based on mid-year 
+# estimates released by NRS
+# Approximate run time - 3 minutes
+##########################################################
+
+### 1 - Housekeeping ----
 
 # Read in packages from library
 
@@ -31,73 +25,93 @@ library(dplyr)
 library(readr)
 library(tidylog)
 library(glue)
+library(janitor)
+library(stringr)
+library(ckanr)
 
 # Set filepaths
 
-filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", 
-                      "Referencing & Standards", "GPD", "2_Population", 
-                      "Population Estimates")
-data_filepath <- file.path(filepath, "Source Data")
-output_filepath <- file.path(filepath, "Lookup Files", "R Files")
-archive_filepath <- file.path(output_filepath, "Archive")
+filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
+                 "2_Population/Population Estimates")
+data_filepath <- glue("{filepath}/Source Data")
+output_filepath <- glue("{filepath}/Lookup Files/R Files")
+
+# Set estimates year
+
+start <- "1981"
+prev <- "2018"
+new <- "2019"
+
+# Open Data resources
+
+ckan <- src_ckan("https://www.opendata.nhs.scot")
+ca2011_id <- "967937c4-8d67-4f39-974f-fd58c4acfda5"
+ca2018_id <- "294478b7-3d67-44f6-a462-721d8d2c44dd"
+ca2019_id <- "2dab0c9d-09be-4266-97f8-4f83e78db85f"
 
 
 
-### 2 - Read in CA2011 lookup file
+### 2 - Read in Council Area Estimates ----
 
-CA2019_pop_est_1981_2018 <- readRDS(glue("{output_filepath}/", 
-                                         "CA2019_pop_est_1981_2018.rds"))
+CA2019_pop_est <- readRDS(glue("{output_filepath}/", 
+                               "CA2019_pop_est_{start}_{new}.rds"))
+
+CA2019_pop_est_5y <- readRDS(
+  glue("{output_filepath}/CA2019_pop_est_5year_agegroups_{start}_{new}.rds"))
+
+# Get HSCP columns from open data resources
+
+hscp2016_lookup <- dplyr::tbl(src = ckan$con, from = ca2011_id) %>% 
+  select(CA, HSCP) %>% 
+  rename(ca2011 = CA, hscp2016 = HSCP) %>%  
+  as_tibble()
+
+hscp2018_lookup <- dplyr::tbl(src = ckan$con, from = ca2018_id) %>% 
+  select(CA, HSCP) %>% 
+  rename(ca2018 = CA, hscp2018 = HSCP) %>%  
+  as_tibble()
+
+hscp2019_lookup <- dplyr::tbl(src = ckan$con, from = ca2019_id) %>% 
+  select(CA, CAName, HSCP, HSCPName) %>% 
+  rename(ca2019 = CA, ca2019name = CAName, hscp2019 = HSCP, 
+         hscp2019name = HSCPName) %>%  
+  as_tibble()
 
 
-# Create a lookup of CA and HSCP columns from the HSCP Locality lookup
-# Select CA2019, CA2018, CA2011, HSCP2019Name, HSCP2019, HSCP2018 and 
-# HSCP2016 columns
-# This gives you all 32 Council Areas matched to HSCP
-# Take distinct rows
-
-CA_HSCP <- read_csv(paste0("//Isdsf00d03/cl-out/lookups/Unicode/", 
-                           "Geography/HSCP Locality/", 
-                           "HSCP Localities_DZ11_Lookup_20180903.csv")) %>%
-  select(CA2019, CA2018, CA2011, HSCP2019Name, HSCP2019, HSCP2018, HSCP2016) %>%
-  distinct()
 
 
 ### 3 - Create the HSCP population estimate file ----
 
 # Match the HSCP columns onto the CA estimates file
-# Create column for SexName
 # Select the relevant columns
 # As there are 31 HSCPs and 32 CAs (Stirling and Clackmannanshire join for HSCP) 
 # this will produce population separately for both Stirling and Clackmannanshire 
 # even though they have the same HSCP code
 # Need to recalculate the sums, so group by all variables bar Pop and calculate 
-# new Pop totals
-# Arrange by Year, HSCP2018, Age and Sex to get the required format
+# new pop totals
+# Arrange by year, hscp2019, age and sex to get the required format
 
-HSCP2019_pop_est_1981_2018 <- CA2019_pop_est_1981_2018 %>%
-  full_join(HSCP_Locality) %>%
-  select(Year, HSCP2019, HSCP2019Name, HSCP2018, HSCP2016, Age, Sex, SexName, 
-         Pop) %>%
-  group_by(Year, HSCP2019, HSCP2019Name, HSCP2018, HSCP2016, Age, Sex, 
-           SexName) %>%
-  summarise(Pop = sum(Pop)) %>%
+HSCP2019_pop_est <- CA2019_pop_est %>%
+  left_join(hscp2016_lookup) %>%
+  left_join(hscp2018_lookup) %>%
+  left_join(hscp2019_lookup) %>%
+  select(year, hscp2019, hscp2019name, hscp2018, hscp2016, age, sex, sex_name, 
+         pop) %>%
+  group_by(year, hscp2019, hscp2019name, hscp2018, hscp2016, age, sex, 
+           sex_name) %>%
+  summarise(pop = sum(pop)) %>%
   ungroup() %>%
-  arrange(Year, HSCP2019, Age, Sex)
+  arrange(year, hscp2019, age, sex)
 
 
 # Save file as .RDS
 
-saveRDS(HSCP2019_pop_est_1981_2018, 
-        glue("{output_filepath}/HSCP2019_pop_est_1981_2018.rds"))
+saveRDS(HSCP2019_pop_est, 
+        glue("{output_filepath}/HSCP2019_pop_est_{start}_{new}.rds"))
 
 
 
 ### 4 - Create the HSCP 5 year age group population estimate file ----
-
-# Create a file for 5 year age group and sex
-
-CA2019_pop_est_5y_1981_2018 <- readRDS(
-  glue("{output_filepath}/CA2019_pop_est_5year_agegroups_1981_2018.rds"))
 
 # Match the HSCP columns onto the CA estimates file
 # Create column for SexName
@@ -106,23 +120,26 @@ CA2019_pop_est_5y_1981_2018 <- readRDS(
 # this will produce population separately for both Stirling and Clackmannanshire 
 # even though they have the same HSCP code
 # Need to recalculate the sums, so group by all variables bar Pop and calculate 
-# new Pop totals
-# Arrange by Year, HSCP2018, Age and Sex to get the required format
+# new pop totals
+# Arrange by year, hscp2019, age_group and sex to get the required format
 
-HSCP2019_pop_est_5year_agegroups_1981_2018 <- CA2019_pop_est_5y_1981_2018 %>%
-  full_join(HSCP_Locality) %>%
-  select(Year, HSCP2019, HSCP2019Name, HSCP2018, HSCP2016, AgeGroup, 
-         AgeGroupName, Sex, SexName, Pop) %>%
-  group_by(Year, HSCP2019, HSCP2019Name, HSCP2018, HSCP2016, AgeGroup, 
-           AgeGroupName, Sex, SexName) %>%
-  summarise(Pop = sum(Pop)) %>%
+HSCP2019_pop_est_5y <- CA2019_pop_est_5y %>%
+  left_join(hscp2016_lookup) %>%
+  left_join(hscp2018_lookup) %>%
+  left_join(hscp2019_lookup) %>%
+  select(year, hscp2019, hscp2019name, hscp2018, hscp2016, age_group, 
+         age_group_name, sex, sex_name, pop) %>%
+  group_by(year, hscp2019, hscp2019name, hscp2018, hscp2016, age_group, 
+           age_group_name, sex, sex_name) %>%
+  summarise(pop = sum(pop)) %>%
   ungroup() %>%
-  arrange(Year, HSCP2019, AgeGroup, Sex)
+  arrange(year, hscp2019, age_group, sex)
 
 # Save file as .RDS
 
-saveRDS(HSCP2019_pop_est_5year_agegroups_1981_2018, 
-        glue("{output_filepath}/HSCP2019_pop_est_5year_agegroups_1981_2018.rds"))
+saveRDS(HSCP2019_pop_est_5y, 
+        glue("{output_filepath}/", 
+             "HSCP2019_pop_est_5year_agegroups_{start}_{new}.rds"))
 
 
 
@@ -130,39 +147,52 @@ saveRDS(HSCP2019_pop_est_5year_agegroups_1981_2018,
 
 ### 5.1 - Check function ----
 
-checks <- function(input, age_column){
+checks <- function(input){
   
-  # Check that all years of the population estimates are there (last update 1982-2017)
+  # Check that all years of the population estimates are there
   # Check that there are no missing values
   # Check all years have the same % of records
   
-  input %>% group_by(Year) %>% count() %>% print(n = Inf)
+  input %>% group_by(year) %>% count() %>% print(n = Inf)
   
-  # Check that all 32 Council Areas are there
+  # Check that all 31 HSCPs are there
   # Check there are no missing values
-  # Check all CAs have the same % of records
+  # Check all HSCPs have the same % of records
   
-  input %>% group_by(HSCP2019) %>% count() %>% print(n = Inf)
-  input %>% group_by(HSCP2018) %>% count() %>% print(n = Inf)
-  input %>% group_by(HSCP2016) %>% count() %>% print(n = Inf)
+  input %>% group_by(hscp2019) %>% count() %>% print(n = Inf)
+  input %>% group_by(hscp2018) %>% count() %>% print(n = Inf)
+  input %>% group_by(hscp2016) %>% count() %>% print(n = Inf)
+  input %>% group_by(hscp2019name) %>% count() %>% print(n = Inf)
   
-  # Check that all 91 ages 0 to 90+ are there
-  # Check there are no missing values
-  # Check all ages have the same % of records
-  
-  input %>% group_by({{age_column}}) %>% count() %>% print(n = Inf)
+  if (str_extract(deparse(substitute(input)), "(..)$") == "5y"){
+    
+    # Check that all age groups are there
+    # Check there are no missing values
+    # Check all age groups have the same % of records
+    
+    input %>% count(age_group) %>% print(n = Inf)
+    
+  } else {
+    
+    # Check that all 91 ages 0 to 90+ are there
+    # Check there are no missing values
+    # Check all ages have the same % of records
+    
+    input %>% count(age) %>% print(n = Inf)
+    
+  }
   
   # Check that both males and females are there
   # Check there are no missing values
   # Check both sexes have the same % of records (50/50)
   
-  input %>% group_by(Sex) %>% count() %>% print(n = Inf)
+  input %>% group_by(sex) %>% count() %>% print(n = Inf)
   
   # Check that the population values are as expected
   # i.e. no negative values or extremely high values etc
   
   input %>%
-    group_by(Pop) %>%
+    group_by(pop) %>%
     count() %>%
     arrange(n) %>%
     filter(n <= 0 | n >= 300)
@@ -170,7 +200,7 @@ checks <- function(input, age_column){
   # Select only the new year(s) of data
   
   new_years <- input %>%
-    filter(Year > 2011)
+    filter(year > 2011)
   
 }
 
@@ -178,10 +208,9 @@ checks <- function(input, age_column){
 
 ### 5.2 - Check single age file ----
 
-checks(input = HSCP2019_pop_est_1981_2018, age_column = "Age")
+checks(input = HSCP2019_pop_est)
 
 
 ### 5.3 - Check 5 year age group file ----
 
-checks(input = HSCP2019_pop_est_5year_agegroups_1981_2018, 
-       age_column = "AgeGroup")
+checks(input = HSCP2019_pop_est_5y)

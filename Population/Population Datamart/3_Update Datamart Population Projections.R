@@ -1,24 +1,18 @@
-### 1 - Information ----
+##########################################################
+# Update Datamart Population Projections
+# Calum Purdie
+# Original date 24/10/2019
+# Latest update author - Calum Purdie
+# Latest update date - 27/03/2020
+# Latest update description - formatting code
+# Type of script - Updating files
+# Written/run on RStudio Desktop
+# Version of R that the script was most recently run on - 3.5.1
+# Code for updating population projections in the Populations Datamart.
+# Approximate run time - 30 seconds
+##########################################################
 
-# Codename - Update Datamart Population Projections
-# Original Author - Calum Purdie
-# Original Date - 24/10/2019
-# Updated - 01/11/2019
-# Type - Updating files
-# Written/run on - R Studio Desktop 
-# Version - 3.5.1
-#
-# install.packages("magrittr")
-# install.packages("tidyr")
-# install.packages("dplyr")
-# install.packages("tidylog")
-# install.packages("readr")
-# install.packages("glue")
-# install.packages("xfun")
-#
-# Description - Code for updating population estimates in the 
-#               Populations Datamart.
-# Approximate run time - <1 second
+### 1 - Housekeeping ----
 
 library(magrittr)
 library(tidyr)
@@ -182,24 +176,24 @@ datamart_output(start = "2018", end = "2043",
 
 ### 4 - Council Area ----
 
-datamart_output(start = "2016", end = "2041", 
+datamart_output(start = "2018", end = "2043", 
                 pop_name = "Council Area Population Projections", 
-                file = "CA2018_pop_proj_2016_2041.rds", 
+                file = "CA2019_pop_proj_2018_2043.rds", 
                 file_name = "CA_PROJECTIONS", 
                 template = "Template_CA_projections.rds")
 
 ### 5 - HSCP ----
 
-datamart_output(start = "2016", end = "2041", 
+datamart_output(start = "2018", end = "2043", 
                 pop_name = "Health and Social Care Partnership Population Projections", 
-                file = "HSCP2018_pop_proj_2016_2041.rds", 
+                file = "HSCP2019_pop_proj_2018_2043.rds", 
                 file_name = "HSCP_PROJECTIONS", 
                 template = "Template_HSCP_projections.rds")
 
 ### 6 - Health Board Current ----
 
-datamart_output(start = "2016", end = "2041", 
+datamart_output(start = "2018", end = "2043", 
                 pop_name = "NHS Board Current Population Projections", 
-                file = "HB2018_pop_proj_2016_2041.rds", 
+                file = "HB2019_pop_proj_2018_2043.rds", 
                 file_name = "HBCURRENT_PROJECTIONS", 
                 template = "Template_HBcurrent_projections.rds")

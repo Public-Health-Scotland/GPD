@@ -1,16 +1,23 @@
 library(magrittr)
 library(dplyr)
 
+
+### 1 Calculating Populations ----
+
 # Calculate populations for geography
 
-pop_function <- function(column, new_column){
+pop_function <- function(data, column, new_column){
   
-  DZ2011_pop_est %>% 
+  data %>% 
     group_by(!!as.name(column)) %>% 
     summarise(!!new_column := sum(total_pop)) %>% 
     ungroup()
   
 }
+
+
+
+### 2 Non Population Weighted ----
 
 # Calculate datazone based non population weighted vigintiles
 
@@ -74,6 +81,58 @@ quin_function <- function(data, quin_col, col){
   
 }
 
+# Create a variable for non population weighted deciles
+
+geo_dec <- function(data){
+  
+  data %<>%
+    mutate(dec = case_when(cpop_per > 0 & cpop_per <= 10 ~ 1, 
+                           cpop_per > 10 & cpop_per <= 20 ~ 2, 
+                           cpop_per > 20 & cpop_per <= 30 ~ 3,
+                           cpop_per > 30 & cpop_per <= 40 ~ 4,
+                           cpop_per > 40 & cpop_per <= 50 ~ 5,
+                           cpop_per > 50 & cpop_per <= 60 ~ 6, 
+                           cpop_per > 60 & cpop_per <= 70 ~ 7, 
+                           cpop_per > 70 & cpop_per <= 80 ~ 8,
+                           cpop_per > 80 & cpop_per <= 90 ~ 9,
+                           cpop_per > 90 & cpop_per <= 100 ~ 10))
+  
+}
+
+# Create a variable for non population weighted quintiles
+
+geo_quin <- function(data){
+  
+  data %<>%
+    mutate(quin = case_when(dec == 1 | dec == 2 ~ 1, 
+                            dec == 3 | dec == 4 ~ 2, 
+                            dec == 5 | dec == 6 ~ 3, 
+                            dec == 7 | dec == 8 ~ 4, 
+                            dec == 9 | dec == 10 ~ 5))
+  
+}
+
+# Create geography level quintiles
+
+geo_quintile <- function(data, quin_col, dec_col){
+  
+  data %<>%
+    mutate(!!as.name(quin_col) := case_when(!!as.name(dec_col) == 1 | 
+                                              !!as.name(dec_col) == 2 ~ 1, 
+                                            !!as.name(dec_col) == 3 | 
+                                              !!as.name(dec_col) == 4 ~ 2,
+                                            !!as.name(dec_col) == 5 | 
+                                              !!as.name(dec_col) == 6 ~ 3,
+                                            !!as.name(dec_col) == 7 | 
+                                              !!as.name(dec_col) == 8 ~ 4,
+                                            !!as.name(dec_col) == 9 | 
+                                              !!as.name(dec_col) == 10 ~ 5))
+  
+}
+
+
+### 3 Population Weighted ----
+
 # Calcuate population weighted vigintiles
 
 vig_cpop <- function(data){
@@ -101,6 +160,10 @@ vig_cpop <- function(data){
                            cpop_per > 95 & cpop_per <= 100 ~ 20))
   
 }
+
+
+
+### 4 Cut-Off Points ----
 
 # Calculate the difference between the cumulative population and the target 
 # cut off points
@@ -150,79 +213,6 @@ vig_cut_off <- function(data){
   
 }
 
-# Run checks on Scotland level data
-
-scot_checks <- function(data){
-  
-  # Check vigintiles, deciles and quintiles align correctly
-  
-  data %>% 
-    group_by(simd2016_sc_quintile, simd2016_sc_decile) %>% 
-    count() %>% 
-    print()
-  
-  data %>% 
-    group_by(simd2016_sc_decile, simd2016_sc_vig) %>% 
-    count() %>% 
-    print()
-  
-  # Check quintile populations look ok
-  
-  data %>%
-    group_by(simd2016_sc_quintile) %>%
-    summarise(total = sum(data_zone2011_pop)) %>%
-    mutate(percentage = total/sum(total)) %>% 
-    print()
-  
-  # Check decile populations look ok
-  
-  data %>%
-    group_by(simd2016_sc_decile) %>%
-    summarise(total = sum(data_zone2011_pop)) %>%
-    mutate(percentage = total/sum(total)) %>% 
-    print()
-  
-  # Check vigintile populations look ok
-  
-  data %>%
-    group_by(simd2016_sc_vig) %>%
-    summarise(total = sum(data_zone2011_pop)) %>%
-    mutate(percentage = total/sum(total)) %>% 
-    print()
-  
-}
-
-# Create a variable for non population weighted deciles
-
-geo_dec <- function(data){
-  
-  data %<>%
-    mutate(dec = case_when(cpop_per > 0 & cpop_per <= 10 ~ 1, 
-                           cpop_per > 10 & cpop_per <= 20 ~ 2, 
-                           cpop_per > 20 & cpop_per <= 30 ~ 3,
-                           cpop_per > 30 & cpop_per <= 40 ~ 4,
-                           cpop_per > 40 & cpop_per <= 50 ~ 5,
-                           cpop_per > 50 & cpop_per <= 60 ~ 6, 
-                           cpop_per > 60 & cpop_per <= 70 ~ 7, 
-                           cpop_per > 70 & cpop_per <= 80 ~ 8,
-                           cpop_per > 80 & cpop_per <= 90 ~ 9,
-                           cpop_per > 90 & cpop_per <= 100 ~ 10))
-  
-}
-
-# Create a variable for non population weighted quintiles
-
-geo_quin <- function(data){
-  
-  data %<>%
-    mutate(quin = case_when(dec == 1 | dec == 2 ~ 1, 
-                            dec == 3 | dec == 4 ~ 2, 
-                            dec == 5 | dec == 6 ~ 3, 
-                            dec == 7 | dec == 8 ~ 4, 
-                            dec == 9 | dec == 10 ~ 5))
-  
-}
-
 # Calculate the difference between the cumulative population % and the target 
 # cut off points
 
@@ -251,27 +241,71 @@ geo_cut_off <- function(data){
   
 }
 
-# Create geography level quintiles
 
-geo_quintile <- function(data, quin_col, dec_col){
+
+### 5 Check Functions ----
+
+# Run checks on Scotland level data
+
+scot_checks <- function(data, quin_col, dec_col, vig_col, tp15, bt15){
   
-  data %<>%
-    mutate(!!as.name(quin_col) := case_when(!!as.name(dec_col) == 1 | 
-                                              !!as.name(dec_col) == 2 ~ 1, 
-                                            !!as.name(dec_col) == 3 | 
-                                              !!as.name(dec_col) == 4 ~ 2,
-                                            !!as.name(dec_col) == 5 | 
-                                              !!as.name(dec_col) == 6 ~ 3,
-                                            !!as.name(dec_col) == 7 | 
-                                              !!as.name(dec_col) == 8 ~ 4,
-                                            !!as.name(dec_col) == 9 | 
-                                              !!as.name(dec_col) == 10 ~ 5))
+  # Check vigintiles, deciles and quintiles align correctly
+  
+  data %>% 
+    group_by(!!as.name(quin_col), !!as.name(dec_col)) %>% 
+    count() %>% 
+    print()
+  
+  data %>% 
+    group_by(!!as.name(dec_col), !!as.name(vig_col)) %>% 
+    count() %>% 
+    print()
+  
+  # Check quintile populations look ok
+  
+  data %>%
+    group_by(!!as.name(quin_col)) %>%
+    summarise(total = sum(datazone2011_pop)) %>%
+    mutate(percentage = total*100/sum(total)) %>% 
+    print()
+  
+  # Check decile populations look ok
+  
+  data %>%
+    group_by(!!as.name(dec_col)) %>%
+    summarise(total = sum(datazone2011_pop)) %>%
+    mutate(percentage = total*100/sum(total)) %>% 
+    print()
+  
+  # Check vigintile populations look ok
+  
+  data %>%
+    group_by(!!as.name(vig_col)) %>%
+    summarise(total = sum(datazone2011_pop)) %>%
+    mutate(percentage = total*100/sum(total)) %>% 
+    print()
+  
+  # Check top 15% is correct
+  
+  data %>% 
+    group_by(!!as.name(vig_col), !!as.name(tp15)) %>% 
+    count() %>% 
+    print()
+  
+  # Check bottom 15% is correct
+  
+  data %>% 
+    group_by(!!as.name(vig_col), !!as.name(bt15)) %>% 
+    count() %>% 
+    print()
   
 }
 
+
+
 # Run checks on smaller geography level data
 
-geo_checks <- function(data, quin_col, dec_col, geography){
+geo_checks <- function(data, quin_col, scot_quin, dec_col, scot_dec, geography){
   
   # Check deciles and quintiles align correctly
   
@@ -283,12 +317,12 @@ geo_checks <- function(data, quin_col, dec_col, geography){
   # Compare Scotland deciles and quintiles within geography
   
   data %>% 
-    group_by(simd2016_sc_quintile, !!as.name(quin_col)) %>% 
+    group_by(!!as.name(scot_quin), !!as.name(quin_col)) %>% 
     count() %>% 
     print(n = Inf)
   
   data %>% 
-    group_by(simd2016_sc_decile, !!as.name(dec_col)) %>% 
+    group_by(!!as.name(scot_dec), !!as.name(dec_col)) %>% 
     count() %>% 
     print(n = Inf)
   
@@ -296,18 +330,22 @@ geo_checks <- function(data, quin_col, dec_col, geography){
   
   data %>%
     group_by(!!as.name(geography), !!as.name(quin_col)) %>%
-    summarise(total = sum(data_zone2011_pop)) %>%
-    mutate(percentage = total/sum(total)) %>% 
+    summarise(total = sum(datazone2011_pop)) %>%
+    mutate(percentage = total*100/sum(total)) %>% 
     print(n = Inf)
   
   # Check decile populations look ok
   
   data %>%
     group_by(!!as.name(geography), !!as.name(dec_col)) %>%
-    summarise(total = sum(data_zone2011_pop)) %>%
-    mutate(percentage = total/sum(total)) %>% 
+    summarise(total = sum(datazone2011_pop)) %>%
+    mutate(percentage = total*100/sum(total)) %>% 
     print(n = Inf)  
 }
+
+
+
+### 6 Manual Changes ----
 
 # Change deciles for small areas
 
@@ -326,14 +364,45 @@ changes_check <- function(data, geography, decile, quintile){
   
   data %>%
     group_by(!!as.name(geography), !!as.name(decile)) %>%
-    summarise(total = sum(data_zone2011_pop)) %>%
-    mutate(percentage = total/sum(total)) %>% 
+    summarise(total = sum(datazone2011_pop)) %>%
+    mutate(percentage = total*100/sum(total)) %>% 
     print(n = Inf) 
   
   data %>%
     group_by(!!as.name(geography), !!as.name(quintile)) %>%
-    summarise(total = sum(data_zone2011_pop)) %>%
-    mutate(percentage = total/sum(total)) %>% 
+    summarise(total = sum(datazone2011_pop)) %>%
+    mutate(percentage = total*100/sum(total)) %>% 
     print(n = Inf) 
   
 }
+
+
+
+### 7 SPSS ----
+
+# Rename SPSS columns
+
+spss_names <- function(data){
+  
+  data %>% 
+    select(-c(datazone2011name, intzone2011name, ca2019name, hscp2019name, 
+              hb2019name)) %>% 
+    rename(DataZone2011 = datazone2011, IntZone2011 = intzone2011, CA2019 = ca2019, 
+           CA2018 = ca2018, CA2011 = ca2011, HB2019 = hb2019, HB2018 = hb2018, 
+           HB2014 = hb2014, HSCP2019 = hscp2019, HSCP2018 = hscp2018, 
+           HSCP2016 = hscp2016)
+}
+
+pc_simd_spss_names <- function(data){
+  
+  data %>% 
+    rename(DataZone2011_simd2020 = datazone2011_simd2020, 
+           DataZone2011_simd2016 = datazone2011_simd2016, 
+           DataZone2001_simd2012 = datazone2001_simd2012, 
+           DataZone2001_simd2009v2 = datazone2001_simd2009v2, 
+           DataZone2001_simd2006 = datazone2001_simd2006, 
+           DataZone2001_simd2004 = datazone2001_simd2004,
+           OA2011 = oa2011, OA2001 = oa2001, OA1991 = oa1991) %>% 
+    select(-datazone2011name)
+}
+

@@ -1,26 +1,18 @@
-### 1 - Information ----
-
-# Codename - Create CKAN Population Estimates Files
-# Data release - Mid-year NRS Population Estimates
-# Original Author - Calum Purdie
-# Original Date - 16/04/2019
-# Updated - 06/11/2019
-# Type - Creation
-# Written/run on - R Studio Desktop 
-# Version - 3.5.1
-#
-# install.packages("magrittr")
-# install.packages("tidyr")
-# install.packages("dplyr")
-# install.packages("data.table")
-# install.packages("tidylog")
-# install.packages("glue")
-#
-# Description - Code for creating open data files for population estimates
-#
+##########################################################
+# Create Open Data Population Estimates Files
+# Calum Purdie
+# Original date 16/04/2019
+# Latest update author - Calum Purdie
+# Latest update date - 30/06/2020
+# Latest update description - formatting code
+# Type of script - Creation
+# Written/run on RStudio Desktop
+# Version of R that the script was most recently run on - 3.5.1
+# Code for creating open data files for population estimates
 # Approximate run time - 10 seconds
+##########################################################
 
-# Load packages
+### 1 - Housekeeping ----
 
 library(magrittr)
 library(tidyr)
@@ -31,17 +23,22 @@ library(glue)
 
 # Set filepaths
 
-data_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI",
-                           "Referencing & Standards", "GPD", "2_Population", 
-                           "Population Estimates", "Lookup Files", "R Files")
+base_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI")
 
-od_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", "Publications", 
-                         "Open Data (Non Health Topic", "Data", 
-                         "OD1700007 - Population Estimates")
+data_filepath <- glue("{base_filepath}/Referencing & Standards/GPD/", 
+                      "2_Population/Population Estimates/Lookup Files/R Files")
+
+od_filepath <- glue("{base_filepath}/Publications/Open Data (Non Health Topic)/",
+                    "Data/OD1700007 - Population Estimates")
 
 # Set date for filenames
 
 date <- strftime(Sys.Date(), format = "%d%m%Y")
+
+# Set years
+
+start <- 1981
+end <- 2019
 
 
 
@@ -49,30 +46,46 @@ date <- strftime(Sys.Date(), format = "%d%m%Y")
 
 geo_pop <- function(filepath, variable){
   
-  geo_pop_est_1981_2017 <- readRDS(glue("{data_filepath}/{filepath}")) %>% 
-    select(Year, variable, Age, SexName, Pop) %>% 
-    rename(Sex = SexName) %>% 
+  geo_pop_est <- readRDS(glue("{data_filepath}/{filepath}_{start}_{end}.rds")) %>%
+    select(year, variable, age, sex_name, pop) %>% 
+    rename(Year = year, 
+           Sex = sex_name, 
+           Pop = pop) %>% 
     mutate(Sex = recode(Sex, "M" = "Male", "F" = "Female")) %>% 
     arrange(Year, Sex) %>% 
-    spread(Age, Pop) %>% 
+    spread(age, Pop) %>% 
     rename_at(4:94, function(x) paste("Age", x, sep=""))
+  
+  # Create totals for male and female combined
+  
+  all_total <- geo_pop_est %>% 
+    group_by(Year, !!as.name(variable)) %>% 
+    summarise_at(vars(Age0:Age90), list(sum)) %>%
+    ungroup() %>% 
+    mutate(Sex = "All")
+  
+  # Add all_total to geo_pop_est
+  
+  geo_pop_est %<>% 
+    bind_rows(all_total)
   
   # Group by Year and Sex for all single years of age
   
-  Scot_total <- geo_pop_est_1981_2017 %>%
+  Scot_total <- geo_pop_est %>%
     group_by(Year, Sex) %>%
     summarise_at(vars(Age0:Age90), list(sum)) %>%
     ungroup()
   
-  # Add geo_pop_est_1981_2017 and Scot_total
+  # Add Scot_total to geo_pop_est
   # Sum across all ages to get totals
   # Sort by Year, variable and Sex
   # Rename Age90 to Age90plus
-  # Reorder to set missing data (Scotland CA2011) first
+  # Reorder to set missing data first
   
-  geo_pop_est_1981_2017 %<>%
+  geo_pop_est %<>%
     full_join(Scot_total) %>%
-    mutate(AllAges = rowSums(.[4:94])) %>%
+    mutate(AllAges = rowSums(.[4:94]), 
+           SexQF = case_when(Sex == "All" ~ "d")) %>%
     arrange(Year, Sex) %>%
     rename(Age90plus = Age90) %>% 
     setorder(na.last = F)
@@ -85,100 +98,77 @@ geo_pop <- function(filepath, variable){
 
 # Read in Council Area estimates
 
-CA2011_pop_est <- geo_pop(filepath = "CA2019_pop_est_1981_2018.rds", 
-                          variable = "CA2019")
+CA2019_pop_est <- geo_pop(filepath = "CA2019_pop_est", 
+                          variable = "ca2019")
 
 # Read in Health Board estimates
 
-HB2014_pop_est <- geo_pop(filepath = "HB2019_pop_est_1981_2018.rds", 
-                                    variable = "HB2019")
+HB2019_pop_est <- geo_pop(filepath = "HB2019_pop_est", 
+                          variable = "hb2019")
 
 # Read in HSCP estimates
 
-HSCP2016_pop_est <- geo_pop(filepath = "HSCP2019_pop_est_1981_2018.rds", 
-                                      variable = "HSCP2019")
+HSCP2019_pop_est <- geo_pop(filepath = "HSCP2019_pop_est", 
+                            variable = "hscp2019")
 
 
 
 ### 4 - Tidy Council Area Data ----
 
-# Due to minor boundary changes from 02/02/2018 and 01/04/2019 which affected 
-# some CA2011 codes, the affected codes need to be updated
-# This requires a qualifier field to show the revised codes
-
-# Recode CA2011 to reflect new codes
+# Rename ca2019 as CA
 # Attach Scotland national code
-# Create qualifier column for CA2011 and  set it to "r" for revised CA2011 codes
+# Create qualifier column for CA and  set it to "r" for revised CA codes
 # and set it to "d" for Scotland totals
 # Reorder columns
 
-CA2011_pop_est <- CA2011_pop_est %>%
-  rename(CA2011 = CA2019) %>% 
-  mutate(CA2011 = if_else(is.na(CA2011), "S92000003", CA2011), 
-         CA2011QF = case_when(CA2011 == "S92000003" ~ "d", 
-                              CA2011 == "S12000047" ~ "r", 
-                              CA2011 == "S12000048" ~ "r", 
-                              CA2011 == "S12000049" ~ "r", 
-                              CA2011 == "S12000050" ~ "r"))  %>%
-  select(Year, CA2011, CA2011QF, Sex, AllAges, Age0:Age90plus)
+CA2019_pop_est %<>%
+  rename(CA = ca2019) %>% 
+  mutate(CA = if_else(is.na(CA), "S92000003", CA), 
+         CAQF = case_when(CA == "S92000003" ~ "d"))  %>%
+  select(Year, CA, CAQF, Sex, SexQF, AllAges, Age0:Age90plus)
 
 # Write as csv
 
-write_csv(CA2011_pop_est, glue("{od_filepath}/CA2011_pop_est_{date}.csv"))
+fwrite(CA2019_pop_est, glue("{od_filepath}/CA2019_pop_est_{date}.csv"), na = "")
 
 
 
-### 5 - Tidy HB2014 Data ----
+### 5 - Tidy Health Board Data ----
 
-# Due to minor boundary changes from 02/02/2018 and 01/04/2019 which affected 
-# some CA2011 codes, the affected codes need to be updated
-# This requires a qualifier field to show the revised codes
-
-# Recode HB2014 to reflect new codes
+# Rename hb2019 to HB
 # Attach Scotland national code
-# Create qualifier column for HB2014 and  set it to "r" for revised HB2014 codes
+# Create qualifier column for HB and  set it to "r" for revised HB codes
 # and set it to "d" for Scotland totals
 # Reorder columns
 
-HB2014_pop_est %<>%
-  rename(HB2014 = HB2019) %>% 
-  mutate(HB2014 = if_else(is.na(HB2014), "S92000003", HB2014), 
-         HB2014QF = case_when(HB2014 == "S92000003" ~ "d", 
-                              HB2014 == "S08000029" ~ "r", 
-                              HB2014 == "S08000030" ~ "r", 
-                              HB2014 == "S08000031" ~ "r", 
-                              HB2014 == "S08000032" ~ "r")) %>%
-  select(Year, HB2014, HB2014QF, Sex, AllAges, Age0:Age90plus)
+HB2019_pop_est %<>%
+  rename(HB = hb2019) %>% 
+  mutate(HB = if_else(is.na(HB), "S92000003", HB), 
+         HBQF = case_when(HB == "S92000003" ~ "d")) %>%
+  select(Year, HB, HBQF, Sex, SexQF, AllAges, Age0:Age90plus)
 
 # Write as csv
 
-write_csv(HB2014_pop_est, glue("{od_filepath}/HB2014_pop_est_{date}.csv"))
+fwrite(HB2019_pop_est, glue("{od_filepath}/HB2019_pop_est_{date}.csv"), na = "")
 
 
 
-### 6 - Tidy HSCP2016 Data ----
+### 6 - Tidy HSCP Data ----
 
-# Due to minor boundary changes from 02/02/2018 and 01/04/2019 which affected 
-# some CA2011 codes, the affected codes need to be updated
-# This requires a qualifier field to show the revised codes
-
-# Recode HSCP2016 to reflect new codes
+# Rename hscp2019 to HSCP
 # Attach Scotland national code
-# Create qualifier column for HSCP2016 and  set it to "r" for revised 
-# HSCP2016 codes and set it to "d" for Scotland totals
+# Create qualifier column for HSCP and  set it to "r" for revised 
+# HSCP codes and set it to "d" for Scotland totals
 # Reorder columns
 
-HSCP2016_pop_est %<>%
-  rename(HSCP2016 = HSCP2019) %>% 
-  mutate(HSCP2016 = if_else(is.na(HSCP2016), "S92000003", HSCP2016), 
-         HSCP2016QF = case_when(HSCP2016 == "S92000003" ~ "d", 
-                                HSCP2016 == "S37000032" ~ "r", 
-                                HSCP2016 == "S37000033" ~ "r", 
-                                HSCP2016 == "S37000034" ~ "r", 
-                                HSCP2016 == "S37000035" ~ "r")) %>%
-  select(Year, HSCP2016, HSCP2016QF, Sex, AllAges, Age0:Age90plus)
+HSCP2019_pop_est %<>%
+  rename(HSCP = hscp2019) %>% 
+  mutate(HSCP = if_else(is.na(HSCP), "S92000003", HSCP), 
+         HSCPQF = case_when(HSCP == "S92000003" ~ "d")) %>%
+  select(Year, HSCP, HSCPQF, Sex, SexQF, AllAges, Age0:Age90plus)
 
 # Write as csv
 
-write_csv(HSCP2016_pop_est, glue("{od_filepath}/HSCP2016_pop_est_{date}.csv"))
+fwrite(HSCP2019_pop_est, 
+       glue("{od_filepath}/HSCP2019_pop_est_{date}.csv"), na = "")
 

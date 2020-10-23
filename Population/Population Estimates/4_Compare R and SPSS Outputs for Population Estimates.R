@@ -1,27 +1,19 @@
+##########################################################
+# Compare R and SPSS Outputs for Population Estimates
+# Calum Purdie
+# Original date - 25/04/2019
+# Data release - Mid-year Council Area Population Estimates
+# Latest update author - Calum Purdie
+# Latest update date - 01/05/2020
+# Latest update description - 2019 estimates
+# Type of script - Comparison
+# Written/run on RStudio Desktop
+# Version of R that the script was most recently run on - 3.5.1
+# Comparing R and SPSS population estimate files
+# Approximate run time - 3 minutes
+##########################################################
+
 ### 1 - Information ----
-
-# Codename - Compare R and SPSS Outputs for Population Estimates
-# Data release - 2018 mid-year population estimates
-# Original Author - Calum Purdie
-# Original Date - 25/04/2019
-# Updated - 05/11/2019
-# Type - Check
-# Written/run on - R Studio Desktop 
-# Version - 3.5.1
-#
-# install.packages("tidyr")
-# install.packages("dplyr")
-# install.packages("stringr")
-# install.packages("haven")
-# install.packages("sjlabelled")
-# install.packages("tidylog")
-# install.packafes("glue")
-#
-# Description - Comparing R and SPSS population estimate files
-#
-# Approximate run time - 5 minutes
-
-# Read in packages from library
 
 library(tidyr)
 library(dplyr)
@@ -30,14 +22,18 @@ library(haven)
 library(sjlabelled)
 library(tidylog)
 library(glue)
+library(janitor)
 
 # Set filepaths
 
-SPSS_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", 
-                           "Referencing & Standards", "GPD", "2_Population", 
-                           "Population Estimates", "Lookup Files")
-R_filepath <- file.path(SPSS_filepath, "R Files")
+SPSS_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
+                      "2_Population/Population Estimates/Lookup Files")
+R_filepath <- glue("{SPSS_filepath}/R Files")
 
+# Set years
+
+start <- "1981"
+end <- "2019"
 
 
 ### 2 - Compare Council Area Files ----
@@ -48,25 +44,26 @@ R_filepath <- file.path(SPSS_filepath, "R Files")
 # Remove variable labels, formats and widths from SPSS
 # Set factors to characters
 
-CA2019_pop_est_1981_2018_SPSS <- read_sav(glue("{SPSS_filepath}/", 
-                                               "CA2019_pop_est_1981_2018.sav"), 
+CA2019_pop_est_SPSS <- read_sav(glue("{SPSS_filepath}/", 
+                                               "CA2019_pop_est_{start}_{end}.sav"), 
                                           user_na=F) %>%
   zap_formats() %>%
   zap_widths() %>%
   remove_all_labels() %>% 
-  mutate_if(is.factor, as.character)
+  mutate_if(is.factor, as.character) %>% 
+  clean_names()
 
 # Read in R file
-# Remove CA2019Name and SexName columns
+# Remove name columns
 
-CA2019_pop_est_1981_2018_R <- readRDS(glue("{R_filepath}/", 
-                                           "CA2019_pop_est_1981_2018.rds")) %>% 
-  select(-c(CA2019Name, SexName))
+CA2019_pop_est_R <- readRDS(glue("{R_filepath}/", 
+                                  "CA2019_pop_est_{start}_{end}.rds")) %>% 
+  select(-c(contains("name")))
 
 
 # Compare files
 
-all_equal(CA2019_pop_est_1981_2018_R, CA2019_pop_est_1981_2018_SPSS)
+all_equal(CA2019_pop_est_SPSS, CA2019_pop_est_R)
 
 
 
@@ -76,24 +73,28 @@ all_equal(CA2019_pop_est_1981_2018_R, CA2019_pop_est_1981_2018_SPSS)
 # Remove variable labels, formats and widths from SPSS
 # Set factors to characters
 
-CA2019_pop_est_5y_1981_2018_SPSS <- read_sav(
-  glue("{SPSS_filepath}/CA2019_pop_est_5year_agegroups_1981_2018.sav"), 
+CA2019_pop_est_5y_SPSS <- read_sav(
+  glue("{SPSS_filepath}/CA2019_pop_est_5year_agegroups_{start}_{end}.sav"), 
   user_na=F) %>%
   zap_formats() %>%
   zap_widths() %>%
   remove_all_labels() %>% 
-  mutate_if(is.factor, as.character)
+  mutate_if(is.factor, as.character) %>% 
+  clean_names()
 
 # Read in R file
-# Remove CA2019Name and SexName columns
+# Remove name columns
 
-CA2019_pop_est_5y_1981_2018_R <- readRDS(
-  glue("{R_filepath}/CA2019_pop_est_5year_agegroups_1981_2018.rds")) %>% 
-  select(-c(CA2019Name, SexName, AgeGroupName))
+CA2019_pop_est_5y_R <- readRDS(
+  glue("{R_filepath}/CA2019_pop_est_5year_agegroups_{start}_{end}.rds")) %>% 
+  select(-c(contains("name")))
 
 # Compare files
 
-all_equal(CA2019_pop_est_5y_1981_2018_SPSS, CA2019_pop_est_5y_1981_2018_R)
+all_equal(CA2019_pop_est_5y_SPSS, CA2019_pop_est_5y_R)
+
+rm(CA2019_pop_est_5y_R, CA2019_pop_est_5y_SPSS, 
+   CA2019_pop_est_R, CA2019_pop_est_SPSS)
 
 
 
@@ -105,24 +106,25 @@ all_equal(CA2019_pop_est_5y_1981_2018_SPSS, CA2019_pop_est_5y_1981_2018_R)
 # Remove variable labels, formats and widths from SPSS
 # Set factors to characters
 
-HB2019_pop_est_1981_2018_SPSS <- read_sav(glue("{SPSS_filepath}/", 
-                                               "HB2019_pop_est_1981_2018.sav"), 
+HB2019_pop_est_SPSS <- read_sav(glue("{SPSS_filepath}/", 
+                                     "HB2019_pop_est_{start}_{end}.sav"), 
                                           user_na=F) %>%
   zap_formats() %>%
   zap_widths() %>%
   remove_all_labels() %>% 
-  mutate_if(is.factor, as.character)
+  mutate_if(is.factor, as.character) %>% 
+  clean_names()
 
 # Read in R file
-# Remove HB2019Name and SexName columns
+# Remove name columns
 
-HB2019_pop_est_1981_2018_R <- readRDS(glue("{R_filepath}/", 
-                                           "HB2019_pop_est_1981_2018.rds")) %>% 
-  select(-c(HB2019Name, SexName))
+HB2019_pop_est_R <- readRDS(glue("{R_filepath}/", 
+                                 "HB2019_pop_est_{start}_{end}.rds")) %>% 
+  select(-c(contains("name")))
 
 # Compare files
 
-all_equal(HB2019_pop_est_1981_2018_R, HB2019_pop_est_1981_2018_SPSS)
+all_equal(HB2019_pop_est_SPSS, HB2019_pop_est_R)
 
 
 
@@ -132,26 +134,28 @@ all_equal(HB2019_pop_est_1981_2018_R, HB2019_pop_est_1981_2018_SPSS)
 # Remove variable labels, formats and widths from SPSS
 # Set factors to characters
 
-HB2019_pop_est_5y_1981_2018_SPSS <- read_sav(
-  glue("{SPSS_filepath}/HB2019_pop_est_5year_agegroups_1981_2018.sav"), 
+HB2019_pop_est_5y_SPSS <- read_sav(
+  glue("{SPSS_filepath}/HB2019_pop_est_5year_agegroups_{start}_{end}.sav"), 
   user_na=F) %>%
   zap_formats() %>%
   zap_widths() %>%
   remove_all_labels() %>% 
-  mutate_if(is.factor, as.character)
+  mutate_if(is.factor, as.character) %>% 
+  clean_names()
 
 # Read in R file
-# Remove HB2019Name and SexName columns
+# Remove name columns
 
-HB2019_pop_est_5y_1981_2018_R <- readRDS(
-  glue("{R_filepath}/HB2019_pop_est_5year_agegroups_1981_2018.rds")) %>% 
-  select(-c(HB2019Name, SexName, AgeGroupName))
+HB2019_pop_est_5y_R <- readRDS(
+  glue("{R_filepath}/HB2019_pop_est_5year_agegroups_{start}_{end}.rds")) %>% 
+  select(-c(contains("name")))
 
 # Compare files
 
-all_equal(HB2019_pop_est_5y_1981_2018_R, HB2019_pop_est_5y_1981_2018_SPSS)
+all_equal(HB2019_pop_est_5y_SPSS, HB2019_pop_est_5y_R)
 
-
+rm(HB2019_pop_est_SPSS, HB2019_pop_est_R, 
+   HB2019_pop_est_5y_SPSS, HB2019_pop_est_5y_R)
 
 
 ### 4 - Compare HSCP Files ----
@@ -162,24 +166,25 @@ all_equal(HB2019_pop_est_5y_1981_2018_R, HB2019_pop_est_5y_1981_2018_SPSS)
 # Remove variable labels, formats and widths from SPSS
 # Set factors to characters
 
-HSCP2019_pop_est_1981_2018_SPSS <- read_sav(
-  glue("{SPSS_filepath}/HSCP2019_pop_est_1981_2018.sav"), 
+HSCP2019_pop_est_SPSS <- read_sav(
+  glue("{SPSS_filepath}/HSCP2019_pop_est_{start}_{end}.sav"), 
   user_na=F) %>%
   zap_formats() %>%
   zap_widths() %>%
   remove_all_labels() %>% 
-  mutate_if(is.factor, as.character)
+  mutate_if(is.factor, as.character) %>% 
+  clean_names()
 
 # Read in R file
-# Remove HSCP2019Name and SexName columns
+# Remove name columns
 
-HSCP2019_pop_est_1981_2018_R <- readRDS(glue("{R_filepath}/", 
-                                             "HSCP2019_pop_est_1981_2018.rds")) %>% 
-  select(-c(HSCP2019Name, SexName))
+HSCP2019_pop_est_R <- readRDS(glue("{R_filepath}/", 
+                                   "HSCP2019_pop_est_{start}_{end}.rds")) %>% 
+  select(-c(contains("name")))
 
 # Compare files
 
-all_equal(HSCP2019_pop_est_1981_2018_R, HSCP2019_pop_est_1981_2018_SPSS)
+all_equal(HSCP2019_pop_est_SPSS, HSCP2019_pop_est_R)
 
 
 
@@ -189,21 +194,22 @@ all_equal(HSCP2019_pop_est_1981_2018_R, HSCP2019_pop_est_1981_2018_SPSS)
 # Remove variable labels, formats and widths from SPSS
 # Set factors to characters
 
-HSCP2019_pop_est_5y_1981_2018_SPSS <- read_sav(
-  glue("{SPSS_filepath}/HSCP2019_pop_est_5year_agegroups_1981_2018.sav"), 
+HSCP2019_pop_est_5y_SPSS <- read_sav(
+  glue("{SPSS_filepath}/HSCP2019_pop_est_5year_agegroups_{start}_{end}.sav"), 
   user_na=F) %>%
   zap_formats() %>%
   zap_widths() %>%
   remove_all_labels() %>% 
-  mutate_if(is.factor, as.character)
+  mutate_if(is.factor, as.character) %>% 
+  clean_names()
 
 # Read in R file
-# Remove HSCP2019Name and SexName columns
+# Remove name columns
 
-HSCP2019_pop_est_5y_1981_2018_R <- readRDS(
-  glue("{R_filepath}/HSCP2019_pop_est_5year_agegroups_1981_2018.rds")) %>% 
-  select(-c(HSCP2019Name, SexName, AgeGroupName))
+HSCP2019_pop_est_5y_R <- readRDS(
+  glue("{R_filepath}/HSCP2019_pop_est_5year_agegroups_{start}_{end}.rds")) %>% 
+  select(-c(contains("name")))
 
 # Compare files
 
-all_equal(HSCP2019_pop_est_5y_1981_2018_R, HSCP2019_pop_est_5y_1981_2018_SPSS)
+all_equal(HSCP2019_pop_est_5y_SPSS, HSCP2019_pop_est_5y_R)

@@ -2,9 +2,9 @@
 # Name of file: Create SIMD2004-2012 Files for CKAN
 # Original author(s): Tina Fu
 # Original date: 12/09/2019
-# Latest update author: Tina Fu
-# Latest update date: 12/09/2019
-# Latest update description: Initial version
+# Latest update author: Calum Purdie
+# Latest update date: 23/06/20120
+# Latest update description: Update SIMD2009 to SIMD2009V"
 # Type of script: data preparation
 # Written/run on: RStudio desktop
 # Version of R that the script was most recently run on: R 3.5.2
@@ -18,6 +18,9 @@
 
 # Load libraries
 library(dplyr)
+library(httr)
+library(here)
+library(ckanr)
 library(readr)
 library(tidylog)
 
@@ -30,12 +33,24 @@ open_data_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI",
                                 "Publications", "Open Data (Non Health Topic)", 
                                 "Data", "OD1700038 - SIMD")
 
+# Set open data resource data
+
+source(here("Geography", "Scottish Postcode Directory", 
+            "Set httr configuration for API.R"))
+
+ckan <- src_ckan("https://www.opendata.nhs.scot")
+res_id <- "e92d19d4-ced7-40c8-b628-e28e4528fc41"
+
 ### 2 - Get DZ2001 lookup from CKAN ----
-dz2001_lookup <- read.csv(file = "https://www.opendata.nhs.scot/dataset/9f942fdb-e59e-44f5-b534-d6e17229cc7b/resource/e92d19d4-ced7-40c8-b628-e28e4528fc41/download/geography_codes_and_labels_dz2001_19082019.csv", stringsAsFactors = FALSE) %>% 
-  select(DZ2001, IZ2001, CA2011, CA2011QF, HSCP2016, HSCP2016QF, 
-         HB1995, HB2006, HB2014, HB2014QF)
+
+dz2001_lookup <- dplyr::tbl(src = ckan$con, from = res_id) %>%  
+  as_tibble() %>% 
+  select(DataZone, IntZone, CA, HSCP, HB)
+
+
 
 ### 3 - Create SIMD2012 file ----
+
 simd2012 <- readRDS(file.path(simd_files, "SIMD 2012", 
                               "DataZone2001_simd2012.rds")) %>% 
   select(DataZone2001, simd2012rank:simd2012_hscp_quintile, 
@@ -65,25 +80,26 @@ simd2009 <- readRDS(file.path(simd_files, "SIMD 2009",
                               "DataZone2001_simd2009v2.rds")) %>% 
   select(DataZone2001, simd2009v2rank:simd2009v2_hscp_decile, 
          simd2009v2tp15, simd2009v2bt15) %>% 
-  rename(DZ2001 = DataZone2001,
-         SIMD2009Rank = simd2009v2rank, 
-         SIMD2009CountryQuintile = simd2009v2_sc_quintile, 
-         SIMD2009CountryDecile = simd2009v2_sc_decile, 
-         SIMD2009HB2006Quintile = simd2009v2_hb2006_quintile,
-         SIMD2009HB2006Decile = simd2009v2_hb2006_decile,
-         SIMD2009HB2014Quintile = simd2009v2_hb2014_quintile,
-         SIMD2009HB2014Decile = simd2009v2_hb2014_decile,
-         SIMD2009CA2011Quintile = simd2009v2_ca_quintile,
-         SIMD2009CA2011Decile = simd2009v2_ca_decile,
-         SIMD2009HSCP2016Quintile = simd2009v2_hscp_quintile,
-         SIMD2009HSCP2016Decile = simd2009v2_hscp_decile,
-         SIMD2009Most15pc = simd2009v2tp15,
-         SIMD2009Least15pc = simd2009v2bt15) %>% 
-  left_join(dz2001_lookup, by = "DZ2001") %>% 
-  select(DZ2001, IZ2001:HSCP2016QF, HB2006:HB2014QF, 
-         SIMD2009Rank:SIMD2009Least15pc)
+  rename(DataZone = DataZone2001,
+         SIMD2009V2Rank = simd2009v2rank, 
+         SIMD2009V2CountryQuintile = simd2009v2_sc_quintile, 
+         SIMD2009V2CountryDecile = simd2009v2_sc_decile, 
+         SIMD2009V2HBQuintile = simd2009v2_hb2014_quintile,
+         SIMD2009V2HBDecile = simd2009v2_hb2014_decile,
+         SIMD2009V2CAQuintile = simd2009v2_ca_quintile,
+         SIMD2009V2CADecile = simd2009v2_ca_decile,
+         SIMD2009V2HSCPQuintile = simd2009v2_hscp_quintile,
+         SIMD2009V2HSCPDecile = simd2009v2_hscp_decile,
+         SIMD2009V2Most15pc = simd2009v2tp15,
+         SIMD2009V2Least15pc = simd2009v2bt15) %>% 
+  left_join(dz2001_lookup) %>% 
+  select(DataZone, IntZone, CA, HSCP, HB, 
+         SIMD2009V2Rank, SIMD2009V2CountryDecile, SIMD2009V2CountryQuintile, 
+         SIMD2009V2HBDecile, SIMD2009V2HBQuintile, SIMD2009V2HSCPDecile, 
+         SIMD2009V2HSCPQuintile, SIMD2009V2CADecile, SIMD2009V2CAQuintile, 
+         SIMD2009V2Most15pc, SIMD2009V2Least15pc)
 
-write_csv(simd2009, file.path(open_data_filepath, "simd2009_01042019.csv"))
+write_csv(simd2009, file.path(open_data_filepath, "simd2009V2_23062019.csv"))
 
 ### 5 - Create SIMD2006 file----
 simd2006 <- readRDS(file.path(simd_files, "SIMD 2006", 
