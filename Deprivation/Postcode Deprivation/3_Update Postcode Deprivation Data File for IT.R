@@ -3,13 +3,12 @@
 # Calum Purdie
 # Original date 18/06/2020
 # Latest update author - Calum Purdie
-# Latest update date - 08/01/2021
+# Latest update date - 29/01/2021
 # Latest update description 
 # Type of script - Update
 # Written/run on RStudio Desktop
 # Version of R that the script was most recently run on - 3.5.1
-# Code for updating postcode deprivation data for IT to upload to APEXT/APEXP
-# Approximate run time - 1 minutes
+# Code for updating postcode deprivation data for IT to upload to APXU/APXP
 ##########################################################
 
 ### 1 Housekeeping ----
@@ -35,10 +34,7 @@ carstairs <- glue("{base_path}/Carstairs/Lookup Files")
 simd <- glue("{base_path}/SIMD/Lookup Files/SIMD 2020")
 output <- glue("{base_path}/Postcode Deprivation/Lookup Files/Files for IT")
 spd <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/1_Geography/",
-            "Scottish Postcode Directory/Previous Versions/Archive")
-chp <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/1_Geography/", 
-            "Scottish Postcode Directory/Source Data/2019_2/", 
-            "Postcode_CHP_Lookups")
+            "Scottish Postcode Directory/Lookup Files")
 dz <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/1_Geography/", 
            "Data Zone/Lookup Files")
 
