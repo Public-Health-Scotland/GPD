@@ -40,7 +40,8 @@ date <- strftime(Sys.Date(), format = "%Y%m%d")
 
 ### 2 - Create Function for Outputs ----
 
-datamart_output <- function(start, end, pop_name, file, file_name, template){
+datamart_output <- function(start, end, pop_name, file, file_name, template, 
+                            geography){
   
   for (i in start:end){
     
@@ -65,7 +66,7 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
     if(file_name == "CA_ESTIMATES"){
       
       data %<>% 
-        rename(Council_Area_9 = ca2011) %>% 
+        rename(Council_Area_9 = !!as.name(geography)) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                NHS_Board_Code_9 = "",
@@ -74,7 +75,7 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
     } else if(file_name == "HSCP_ESTIMATES"){
       
       data %<>% 
-        rename(HSCP_Code = hscp2016) %>% 
+        rename(HSCP_Code = !!as.name(geography)) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                NHS_Board_Code_9 = "",
@@ -85,7 +86,7 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
                file_name == "HBEVENTv2_ESTIMATES"){
       
       data %<>% 
-        rename(NHS_Board_Code_9 = hb2014) %>% 
+        rename(NHS_Board_Code_9 = !!as.name(geography)) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                Council_Area_9 = "",
@@ -157,21 +158,23 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
 
 ### 3 - Council Area ----
 
-datamart_output(start = "2019", end = "2019", 
+datamart_output(start = "1981", end = "2019", 
                 pop_name = "Council Area Population Estimates", 
                 file = "CA2019_pop_est_1981_2019.rds", 
                 file_name = "CA_ESTIMATES", 
-                template = "Template_CA_estimates.rds")
+                template = "Template_CA_estimates.rds", 
+                geography = "ca2019")
 
 
 
 ### 4 - HSCP ----
 
-datamart_output(start = "2019", end = "2019", 
+datamart_output(start = "1981", end = "2019", 
                 pop_name = "Health and Social Care Partnership Population Estimates", 
                 file = "HSCP2019_pop_est_1981_2019.rds", 
                 file_name = "HSCP_ESTIMATES", 
-                template = "Template_HSCP_estimates.rds")
+                template = "Template_HSCP_estimates.rds", 
+                geography = "hscp2019")
 
 
 
@@ -179,24 +182,41 @@ datamart_output(start = "2019", end = "2019",
 
 ### 5.1 - HBCURRENT ----
 
-datamart_output(start = "2019", end = "2019", 
+datamart_output(start = "1981", end = "2019", 
                 pop_name = "NHS Board Current Population Estimates", 
                 file = "HB2019_pop_est_1981_2019.rds", 
                 file_name = "HBCURRENT_ESTIMATES", 
-                template = "Template_HBcurrent_estimates.rds")
+                template = "Template_HBcurrent_estimates.rds", 
+                geography = "hb2019")
 
 ### 5.2 - HBEVENT ----
+
+datamart_output(start = "2018", end = "2018", 
+                pop_name = "NHS Board At Event Population Estimates", 
+                file = "HB2019_pop_est_1981_2019.rds", 
+                file_name = "HBEVENT_ESTIMATES", 
+                template = "Template_HBevent_estimates.rds", 
+                geography = "hb2018")
 
 datamart_output(start = "2019", end = "2019", 
                 pop_name = "NHS Board At Event Population Estimates", 
                 file = "HB2019_pop_est_1981_2019.rds", 
                 file_name = "HBEVENT_ESTIMATES", 
-                template = "Template_HBevent_estimates.rds")
+                template = "Template_HBevent_estimates.rds", 
+                geography = "hb2019")
 
 ### 5.3 - HBEVENTv2 ----
+
+datamart_output(start = "2018", end = "2018", 
+                pop_name = "NHS Board At Event (excluding Argyll & Clyde) Population Estimates", 
+                file = "HB2019_pop_est_1981_2019.rds", 
+                file_name = "HBEVENTv2_ESTIMATES", 
+                template = "Template_HB2014eventv2_estimates.rds", 
+                geography = "hb2018")
 
 datamart_output(start = "2019", end = "2019", 
                 pop_name = "NHS Board At Event (excluding Argyll & Clyde) Population Estimates", 
                 file = "HB2019_pop_est_1981_2019.rds", 
                 file_name = "HBEVENTv2_ESTIMATES", 
-                template = "Template_HB2014eventv2_estimates.rds")
+                template = "Template_HB2014eventv2_estimates.rds", 
+                geography = "hb2019")

@@ -24,14 +24,14 @@ library(xfun)
 
 # Set filepaths
 
-base_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", 
-                           "Referencing & Standards", "GPD", "2_Population")
-lookups_filepath <- file.path(base_filepath, "Population Projections", 
-                              "Lookup Files", "R Files")
-templates_filepath <- file.path(base_filepath, "Population Datamart", 
-                                "Creation of Files", "Templates", "R Templates")
-datamart_filepath <- file.path(base_filepath, "Population Datamart", 
-                               "Lookup Files", "Other Geographies")
+base_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
+                      "2_Population")
+lookups_filepath <- glue("{base_filepath}/Population Projections/Lookup Files/",
+                         "R Files")
+templates_filepath <- glue("{base_filepath}/Population Datamart/", 
+                           "Creation of Files/Templates/R Templates")
+datamart_filepath <- glue("{base_filepath}/Population Datamart/Lookup Files/", 
+                          "Other Geographies")
 
 # Set date for filenames
 
@@ -40,7 +40,8 @@ date <- strftime(Sys.Date(), format = "%Y%m%d")
 
 ### 2 - Create Function for Outputs ----
 
-datamart_output <- function(start, end, pop_name, file, file_name, template){
+datamart_output <- function(start, end, pop_name, file, file_name, template, 
+                            geography){
   
   for (i in start:end){
     
@@ -74,7 +75,7 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
     } else if(file_name == "CA_PROJECTIONS"){
       
       data %<>% 
-        rename(Council_Area_9 = ca2011) %>% 
+        rename(Council_Area_9 = !!as.name(geography)) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                NHS_Board_Code_9 = "",
@@ -83,7 +84,7 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
     } else if(file_name == "HSCP_PROJECTIONS"){
       
       data %<>% 
-        rename(HSCP_Code = hscp2016) %>% 
+        rename(HSCP_Code = !!as.name(geography)) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                NHS_Board_Code_9 = "",
@@ -92,7 +93,7 @@ datamart_output <- function(start, end, pop_name, file, file_name, template){
     } else if (file_name == "HBCURRENT_PROJECTIONS"){
       
       data %<>% 
-        rename(NHS_Board_Code_9 = hb2014) %>% 
+        rename(NHS_Board_Code_9 = !!as.name(geography)) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                Council_Area_9 = "",
@@ -180,7 +181,8 @@ datamart_output(start = "2018", end = "2043",
                 pop_name = "Council Area Population Projections", 
                 file = "CA2019_pop_proj_2018_2043.rds", 
                 file_name = "CA_PROJECTIONS", 
-                template = "Template_CA_projections.rds")
+                template = "Template_CA_projections.rds", 
+                geography = "ca2019")
 
 ### 5 - HSCP ----
 
@@ -188,7 +190,8 @@ datamart_output(start = "2018", end = "2043",
                 pop_name = "Health and Social Care Partnership Population Projections", 
                 file = "HSCP2019_pop_proj_2018_2043.rds", 
                 file_name = "HSCP_PROJECTIONS", 
-                template = "Template_HSCP_projections.rds")
+                template = "Template_HSCP_projections.rds", 
+                geography = "hscp2019")
 
 ### 6 - Health Board Current ----
 
@@ -196,4 +199,5 @@ datamart_output(start = "2018", end = "2043",
                 pop_name = "NHS Board Current Population Projections", 
                 file = "HB2019_pop_proj_2018_2043.rds", 
                 file_name = "HBCURRENT_PROJECTIONS", 
-                template = "Template_HBcurrent_projections.rds")
+                template = "Template_HBcurrent_projections.rds", 
+                geography = "hb2019")
