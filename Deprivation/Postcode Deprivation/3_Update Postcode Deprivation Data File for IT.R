@@ -40,7 +40,7 @@ dz <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/1_Geography/",
 
 # SPD Version
 
-pc_version <- "2019_2"
+pc_version <- "2020_2"
 
 
 
@@ -51,9 +51,8 @@ pc_version <- "2019_2"
 dz2011_lookup <- readRDS(glue("{dz}/datazone2011_lookup.rds"))
 dz2001_lookup <- readRDS(glue("{dz}/datazone2001_lookup.rds"))
 
-pc_data <- readRDS(glue("{lookups}/Archive/", 
+pc_data <- readRDS(glue("{lookups}/", 
                         "postcode_{pc_version}_all_simd_carstairs.rds")) %>% 
-  select(-c(simd2020_rank:simd2020_crime_rank)) %>% 
   rename(POSTCODE = pc7, 
          OA2001 = oa2001, 
          OA2011 = oa2011) %>% 
@@ -63,18 +62,21 @@ pc_data <- readRDS(glue("{lookups}/Archive/",
 
 ### 3 SIMD2020v2 ----
 
-# Match on DataZone2011_simd2020v2 data
-# This step is only required due to using old (2019_2) postcode file
+# SIMD 2020v2
+# NEED TO MATCH ON GEOGRAPHIES EACH TIME
 
-dz2011_simd2020v2 <- readRDS(glue("{simd}/DataZone2011_simd2020v2.rds")) %>% 
-  select_at(vars(-contains("name"))) %>% 
-  select(datazone2011, hb2019, hb2018, hb2014, ca2019, ca2018, ca2011, hscp2019, 
+simd2020v2 <- pc_data %>% 
+  left_join(dz2011_lookup %>% select(datazone2011, hb2019, hb2018, hb2014, 
+                                     ca2019, ca2018, ca2011, hscp2019, 
+                                     hscp2018, hscp2016), 
+            by = c("datazone2011_simd2020v2" = "datazone2011")) %>% 
+  select(POSTCODE, datazone2011_simd2020v2, hb2019, hb2018, hb2014, ca2019, ca2018, ca2011, hscp2019, 
          hscp2018, hscp2016, simd2020v2_sc_quintile, simd2020v2_sc_decile, 
          simd2020v2_hb2019_quintile, simd2020v2_hb2019_decile, 
          simd2020v2_ca2019_quintile, simd2020v2_ca2019_decile, 
          simd2020v2_hscp2019_quintile, simd2020v2_hscp2019_decile, 
          simd2020v2tp15, simd2020v2bt15) %>% 
-  rename(SIMD2020V2_DATAZONE = datazone2011, 
+  rename(SIMD2020V2_DATAZONE = datazone2011_simd2020v2, 
          SIMD2020V2_HB2019 = hb2019, 
          SIMD2020V2_HB2018 = hb2018, 
          SIMD2020V2_HB2014 = hb2014, 
@@ -95,11 +97,6 @@ dz2011_simd2020v2 <- readRDS(glue("{simd}/DataZone2011_simd2020v2.rds")) %>%
          SIMD2020V2_TOP_15 = simd2020v2tp15, 
          SIMD2020V2_BOT_15 = simd2020v2bt15) %>% 
   mutate_if(is.character, list(~na_if(., "")))
-
-simd2020v2 <- pc_data %>%
-  select(POSTCODE, datazone2011_simd2020) %>% 
-  rename(SIMD2020V2_DATAZONE = datazone2011_simd2020) %>% 
-  left_join(dz2011_simd2020v2)
 
 # Update 8 postcodes that moved from Glasgow to Lanarkshire
 
@@ -494,6 +491,29 @@ dec_cols <- pc_dep %>%
   select(matches("QUINTILE")) %>% 
   mutate(negative = rowSums(. < 1 & . > 10)) %>% 
   filter(negative != 0)
+
+# SIMD 2016
+
+pc_dep %>% filter(SIMD2016_DATAZONE == "#NULL!") %>% 
+  count(SIMD2016_HB2014, SIMD2016_HB2014_DECILE, SIMD2016_HB2014_QUINTILE) %>% 
+  print(n=Inf)
+
+pc_dep %>% filter(SIMD2016_DATAZONE == "#NULL!") %>% 
+  count(SIMD2016_CA, SIMD2016_CA_DECILE, SIMD2016_CA_QUINTILE) %>% 
+  print(n=Inf)
+
+pc_dep %>% filter(SIMD2016_DATAZONE == "#NULL!") %>% 
+  count(SIMD2016_HSCP, SIMD2016_HSCP_DECILE, SIMD2016_HSCP_QUINTILE) %>% 
+  print(n=Inf)
+
+pc_dep %>% filter(SIMD2016_DATAZONE == "#NULL!") %>% 
+  count(SIMD2016_SCT_DECILE, SIMD2016_SCT_QUINTILE) %>% 
+  print(n=Inf)
+
+pc_dep %>% filter(SIMD2016_DATAZONE == "#NULL!") %>% 
+  count(SIMD2016_BOT_15, SIMD2016_TOP_15) %>% 
+  print(n=Inf)
+
 
 # SIMD 2012
 
