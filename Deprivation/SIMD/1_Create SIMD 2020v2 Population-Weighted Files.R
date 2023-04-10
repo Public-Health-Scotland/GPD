@@ -66,14 +66,19 @@ spd <- glue("{base_filepath}/1_Geography/Scottish Postcode Directory/",
 
 source(here::here("Deprivation", "SIMD", "Functions for Creating SIMD Files.R"))
 
-
+##########################################################
 ### 2 Get Populations Data Ready for Matching ----
+##########################################################
 
+##############################################
 ### 2.1 Read in data ----
+##############################################
 
+############################
 # Read in uncorrected populations
 # Select only 2017 population estimates as these are the populations SIMD 2020 
 # is based on
+############################
 
 dz2011_pop_est <- readRDS(glue("{pop_archive}/", 
                                 "DataZone2011_pop_est_2011_2017.rds")) %>% 
@@ -82,14 +87,17 @@ dz2011_pop_est <- readRDS(glue("{pop_archive}/",
   rename(datazone2011 = data_zone2011, 
          intzone2011 = int_zone2011)
 
-
-
+##############################################
 ### 2.2 Add higher geographies ----
+##############################################
 
+############################
 # Add columns for higher geographies
 
 # Use the Geography Codes and Names open data file to get the IZ names
 # First need to run the httr configuration script
+# For reading dataframe, the VPN may need to be disconnected
+############################
 
 source(here("Geography", "Scottish Postcode Directory", 
             "Set httr configuration for API.R"))
@@ -107,16 +115,20 @@ dz_iz <- dplyr::tbl(src = ckan$con, from = res_id) %>%
          hscp2019 = HSCP, hscp2019name = HSCPName, 
          hb2019 = HB, hb2019name = HBName)
 
+############################
 # Match on higher geographies
 # Sort by DataZone2011 for matching
 # Create a Scotland flag
+############################
 
 dz2011_pop_est %<>%
   arrange(datazone2011) %>%
   left_join(dz_iz) %>% 
   mutate(scot = 1)
 
+############################
 # Select relevant geography names
+############################
 
 geo_names <- dz2011_pop_est %>% 
   select(datazone2011, datazone2011name, intzone2011, intzone2011name, 
@@ -124,30 +136,39 @@ geo_names <- dz2011_pop_est %>%
          hscp2016, hb2019, hb2019name, hb2018, hb2014) %>% 
   distinct()
 
-
-
+##############################################
 ### 2.3 Create Geography Population Files ----
+##############################################
 
+############################
 # scotland
+############################
 
 scotland_pop <- pop_function(dz2011_pop_est, "scot", "scot_pop")
 
+############################
 # hb2019
+############################
 
 hb2019_pop <- pop_function(dz2011_pop_est, "hb2019", "hb2019_pop")
 
+############################
 # hscp2019
+############################
 
 hscp2019_pop <- pop_function(dz2011_pop_est, "hscp2019", "hscp2019_pop")
 
+############################
 # ca2019
+############################
 
 ca2019_pop <- pop_function(dz2011_pop_est, "ca2019", "ca2019_pop")
 
+############################
 # dz2011
+############################
 
 dz2011_pop <- pop_function(dz2011_pop_est, "datazone2011", "datazone2011_pop")
-
 
 
 ### 3 - Get SIMD domains ready for matching ----
