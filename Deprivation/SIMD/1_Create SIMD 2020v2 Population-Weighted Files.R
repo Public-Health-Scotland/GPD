@@ -819,11 +819,13 @@ simd2020v2_ca2019 <- simd2020v2_ca2019_unchanged %>%
 
 rm(simd2020v2_ca2019_shetland, simd2020v2_ca2019_unchanged)
 
-
-
+##########################################################
 ### 9 - Put Everything Together to Create SIMD 2020 Lookup File ----
+##########################################################
 
+############################
 # Match hb2019, hscp2019, ca2019 and simd_domains files onto simd2020
+############################
 
 dz2011_simd2020v2 <- simd2020 %>%
   left_join(simd2020v2_hb2019) %>%
@@ -831,7 +833,9 @@ dz2011_simd2020v2 <- simd2020 %>%
   left_join(simd2020v2_ca2019) %>%
   left_join(simd_domains)
 
+############################
 # Rename variables
+############################
 
 dz2011_simd2020v2 %<>%
   rename(simd2020v2_inc_rate = income_rate, 
@@ -849,7 +853,9 @@ dz2011_simd2020v2 %<>%
          simd2020v2_crime_rank = simd2020v2_crime_domain_rank, 
          pop_2017 = datazone2011_pop)
 
+############################
 # Select relevant variables
+############################
 
 dz2011_simd2020v2 %<>%
   select(datazone2011, datazone2011name, intzone2011, intzone2011name, 
@@ -865,28 +871,38 @@ dz2011_simd2020v2 %<>%
          simd2020v2_access_rank, simd2020v2_crime_rate, simd2020v2_crime_count, 
          simd2020v2_crime_rank, pop_2017)
 
+############################
 # Round simd2020v2_crime_rate and simd2020v2_crime_count to 6 decimal places
+############################
 
 dz2011_simd2020v2 %<>%
   mutate(simd2020v2_crime_rate = round_half_up(as.numeric(simd2020v2_crime_rate), 6), 
          simd2020v2_crime_count = round_half_up(as.numeric(simd2020v2_crime_count), 6))
 
+############################
 # Format quintiles and deciles columns to be integers
+############################
 
 dz2011_simd2020v2 %<>%
   mutate_at(vars(dplyr::contains("_quintile")), as.integer) %>% 
   mutate_at(vars(dplyr::contains("_decile")), as.integer)
 
+############################
 # Save dz2011_simd2020v2 as rds
+############################
 
 saveRDS(dz2011_simd2020v2, glue("{simd_lookup}/DataZone2011_simd2020v2.rds"))
 
+############################
 # Save dz2011_simd2020v2 as csv
+############################
 
 write_csv(dz2011_simd2020v2, glue("{simd_lookup}/DataZone2011_simd2020v2.csv"), 
           na = "")
 
+############################
 # Save dz2011_simd2020v2 as sav
+############################
 
 dz2011_simd2020v2_spss <- spss_names(dz2011_simd2020v2)
 
@@ -895,3 +911,9 @@ write_sav(dz2011_simd2020v2_spss,
 
 rm(simd2020, simd2020v2_ca2019, simd2020v2_hb2019, simd2020v2_hscp2019, 
    dz2011_simd2020v2_spss)
+
+##########################################################
+##########################################################
+################### End of script ---- ###################
+##########################################################
+##########################################################
