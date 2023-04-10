@@ -12,8 +12,13 @@
 # Approximate run time - 6 minutes
 ##########################################################
 
-
+##########################################################
 ### 1 - Housekeeping ----
+##########################################################
+
+##############################################
+### 1.1 - Load Packages ----
+##############################################
 
 library(magrittr)
 library(tidyr)
@@ -30,7 +35,9 @@ library(haven)
 library(sjlabelled)
 library(openxlsx)
 
-# set filepaths
+##############################################
+### 1.2 -  Set filepaths ---- 
+##############################################
 
 base_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD")
 
@@ -53,11 +60,11 @@ pc_simd_filepath <- glue("{base_filepath}/3_Deprivation/Postcode Deprivation/",
 spd <- glue("{base_filepath}/1_Geography/Scottish Postcode Directory/", 
             "Lookup Files/R Files")
 
-# Read in functions
+##############################################
+### 1.3 - Read in functions ---- 
+##############################################
 
 source(here::here("Deprivation", "SIMD", "Functions for Creating SIMD Files.R"))
-
-
 
 
 ### 2 Get Populations Data Ready for Matching ----
