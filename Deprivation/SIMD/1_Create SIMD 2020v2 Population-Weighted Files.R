@@ -203,9 +203,11 @@ simd_ranks <- read_xlsx(glue("{simd_filepath}/SIMD_2020v2_Ranks_and_Domain_",
 simd_domains <- simd_ranks %>% 
   left_join(simd_indicators) 
 
-
+##########################################################
 ### 4 - Calculate SIMD 2020 Scotland level population weighted categories ----
+##########################################################
 
+############################
 # Read in source data
 # Match on higher geographies and Data Zone populations
 # Create Scotland flag for matching
@@ -213,6 +215,7 @@ simd_domains <- simd_ranks %>%
 # Sort cases in order of SIMD 2016 rank, i.e. from most to least deprived
 # Create a variable to store cumulative population
 # Calculate the cumulative population percentage
+############################
 
 simd2020 <- simd_ranks %>%
   left_join(geo_names) %>%
@@ -223,32 +226,44 @@ simd2020 <- simd_ranks %>%
   mutate(cpop = cumsum(datazone2011_pop), 
          cpop_per = (cpop/scot_pop)*100)
 
+############################
 # Create datazone based non population weighted vigintiles
+############################
 
 simd2020 <- vig_function(simd2020, "npw_vig", "simd2020v2_rank")
 
+############################
 # Create datazone based non population weighted deciles
+############################
 
 simd2020 <- dec_function(simd2020, "npw_dec", "npw_vig")
 
+############################
 # Create datazone based non population weighted quintiles
+############################
 
 simd2020 <- quin_function(simd2020, "npw_quin", "npw_dec")
 
+############################
 # Create a variable for population weighted vigintiles based on the cut off 
 # always being below the target cut off point
+############################
 
 simd2020 <- vig_cpop(simd2020)
 
+############################
 # Create a variable to calculate the difference between the cumulative 
 # population and the target cut off points
+############################
 
 simd2020 <- vig_cut_off(simd2020)
 
+############################
 # Flag the points where the vigintiles change
 # Set first row value for flag to 0 rather than NA
 # Calculate the difference between the cut off point differences
 # This allows us to set the cut off point for the population weighted vigintiles
+############################
 
 simd2020 %<>%
   mutate(flag = if_else(scot == lag(scot) & vig != lag(vig), 1, 0), 
