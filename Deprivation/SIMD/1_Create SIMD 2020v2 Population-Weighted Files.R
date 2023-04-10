@@ -270,28 +270,36 @@ simd2020 %<>%
          flag = if_else(is.na(flag), 0, flag), 
          d2 = if_else(flag == 1 & scot == lag(scot), d1 + lag(d1), 0))
 
-
+##########################################################
 ### 5 - Population Weighted Vigintiles ----        
+##########################################################
 
+############################
 # Create a variable for population weighted vigintiles
+############################
 
 simd2020 %<>%
   mutate(simd2020v2_sc_vig = if_else(d2 <= 0, vig, 
                                    if_else(d2 > 0 & 
                                           scot == lag(scot), lag(vig), 0)))
 
+############################
 # Create Scotland level deciles
+############################
 
 simd2020 <- dec_function(simd2020, "simd2020v2_sc_decile", "simd2020v2_sc_vig")
 
+############################
 # Create Scotland level quintiles
+############################
 
 simd2020 <- quin_function(simd2020, "simd2020v2_sc_quintile", 
                           "simd2020v2_sc_decile")
 
-
+############################
 # Create variables for 15% most and least deprived
 # Sort by dz2011
+############################
 
 simd2020 %<>%
   mutate(simd2020v2tp15 = if_else(simd2020v2_sc_vig == 1 | 
@@ -302,7 +310,9 @@ simd2020 %<>%
                                   simd2020v2_sc_vig == 20, 1, 0)) %>%
   arrange(datazone2011)
 
+############################
 # Run checks on Scotland level data
+############################
 
 scot_checks(simd2020, "simd2020v2_sc_quintile", "simd2020v2_sc_decile", 
             "simd2020v2_sc_vig", "simd2020v2tp15", "simd2020v2bt15")
