@@ -669,19 +669,23 @@ simd2020v2_hscp2019 <- simd2020v2_hscp2019_unchanged %>%
 
 rm(simd2020v2_hscp2019_shetland, simd2020v2_hscp2019_unchanged)
 
-
-
+##########################################################
 ### 8 - Calculate SIMD 2020 Council Area Level Population Weighted Categories ----
+##########################################################
 
+############################
 # Match simd2020 file onto ca2019_pop
 # Arrange by council area and simd rank
+############################
 
 simd2020v2_ca2019 <- simd2020 %>%
   left_join(ca2019_pop) %>%
   arrange(ca2019, simd2020v2_rank)
 
+############################
 # Calculate cumulative population within each council area
 # Calculate the cumulative population percentage
+############################
 
 simd2020v2_ca2019 %<>%
   group_by(ca2019) %>%
@@ -689,33 +693,43 @@ simd2020v2_ca2019 %<>%
          cpop_per = (cpop/ca2019_pop)*100) %>%
   ungroup()
 
+############################
 # Create a variable for non population weighted deciles
+############################
 
 simd2020v2_ca2019 <- geo_dec(simd2020v2_ca2019)
 
+############################
 # Create a variable for non population weighted quintiles
+############################
 
 simd2020v2_ca2019 <- geo_quin(simd2020v2_ca2019)
 
+############################
 # Create a variable to calculate the difference between the cumulative 
 # population % and the target cut off points
+############################
 
 simd2020v2_ca2019 <- geo_cut_off(simd2020v2_ca2019)
 
+############################
 # Flag the points where the non population weighted deciles change
 # Set first row value for flag to 0 rather than NA
 # Calculate the difference between the cut off point differences
 # This allows us to set the cut off point for the population weighted vigintiles
+############################
 
 simd2020v2_ca2019 %<>%
   mutate(flag = if_else(ca2019 == lag(ca2019) & dec != lag(dec), 1, 0), 
          flag = if_else(is.na(flag), 0, flag), 
          d2 = if_else(flag == 1 & ca2019 == lag(ca2019), d1 + lag(d1), 0))
 
+############################
 # Create a variable for population weighted decile
 # If the difference is greater than zero, we change the cut off point for the 
 # population weighted vigintiles
 # This ensures we have as close to the target cut off point as possible
+############################
 
 simd2020v2_ca2019 %<>%
   mutate(simd2020v2_ca2019_decile = 
@@ -723,23 +737,30 @@ simd2020v2_ca2019 %<>%
                    dec, 
                    if_else(d2 > 0 & ca2019 == lag(ca2019), lag(dec), 0)))
 
+############################
 # Create Council Area level quintiles
+############################
 
 simd2020v2_ca2019 <- geo_quintile(simd2020v2_ca2019, 
                                 "simd2020v2_ca2019_quintile", 
                                 "simd2020v2_ca2019_decile")
 
+############################
 # Run checks on Scotland level data
+############################
 
 geo_checks(simd2020v2_ca2019, "simd2020v2_ca2019_quintile", "simd2020v2_sc_quintile", 
            "simd2020v2_ca2019_decile", "simd2020v2_sc_decile","ca2019")
 
-
+##############################################
 ### 8.1 - Manual Changes for Small Council Areas ----
+##############################################
 
+############################
 # From the custom tables above the following changes need to be made to allow 
 # the population weighted deciles to be as close to 10%/20% as they can be
 # From the checks output we need to update Shetland
+############################
 
 simd2020v2_ca2019_shetland <- simd2020v2_ca2019 %>% 
   filter(ca2019 == "S12000027")
@@ -747,34 +768,44 @@ simd2020v2_ca2019_shetland <- simd2020v2_ca2019 %>%
 simd2020v2_ca2019_unchanged <- simd2020v2_ca2019 %>% 
   filter(ca2019 != "S12000027")
 
-
-
+##################################
 ### 8.1.1 - Shetland ----
+##################################
 
+############################
 # Change deciles
+############################
 
 simd2020v2_ca2019_shetland %<>%
   mutate(simd2020v2_ca2019_decile = case_when(datazone2011 == "S01012409" ~ 2, 
                                             datazone2011 == "S01012387" ~ 4,  
                                             TRUE ~ simd2020v2_ca2019_decile))
+
+############################
 # Recalculate ca level quintiles
+############################
 
 simd2020v2_ca2019_shetland <- geo_quintile(simd2020v2_ca2019_shetland, 
                                          "simd2020v2_ca2019_quintile", 
                                          "simd2020v2_ca2019_decile")
 
+############################
 # Check changes look ok
+############################
 
 changes_check(simd2020v2_ca2019_shetland, "ca2019", "simd2020v2_ca2019_decile", 
               "simd2020v2_ca2019_quintile")
 
 
-
+##############################################
 ### 8.2 - Select Columns for Output ----
+##############################################
 
+############################
 # Join unchanged data with the small Council Areas
 # Select the relevant variables
 # Sort by ca2019, decile and dz2011
+############################
 
 simd2020v2_ca2019 <- simd2020v2_ca2019_unchanged %>%
   bind_rows(simd2020v2_ca2019_shetland) %>% 
@@ -782,7 +813,9 @@ simd2020v2_ca2019 <- simd2020v2_ca2019_unchanged %>%
          simd2020v2_ca2019_quintile) %>% 
   arrange(ca2019, simd2020v2_ca2019_decile, datazone2011)
 
+############################
 # Remove dataframes
+############################
 
 rm(simd2020v2_ca2019_shetland, simd2020v2_ca2019_unchanged)
 
