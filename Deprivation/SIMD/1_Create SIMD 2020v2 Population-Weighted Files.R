@@ -12,13 +12,8 @@
 # Approximate run time - 6 minutes
 ##########################################################
 
-##########################################################
-### 1 - Housekeeping ----
-##########################################################
 
-##############################################
-### 1.1 - Load Packages ----
-##############################################
+### 1 - Housekeeping ----
 
 library(magrittr)
 library(tidyr)
@@ -35,9 +30,7 @@ library(haven)
 library(sjlabelled)
 library(openxlsx)
 
-##############################################
-### 1.2 -  Set Filepaths ----
-##############################################
+# set filepaths
 
 base_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD")
 
@@ -60,25 +53,20 @@ pc_simd_filepath <- glue("{base_filepath}/3_Deprivation/Postcode Deprivation/",
 spd <- glue("{base_filepath}/1_Geography/Scottish Postcode Directory/", 
             "Lookup Files/R Files")
 
-##############################################
-### 1.3 - Read in functions ----
-##############################################
+# Read in functions
 
 source(here::here("Deprivation", "SIMD", "Functions for Creating SIMD Files.R"))
 
-##########################################################
+
+
+
 ### 2 Get Populations Data Ready for Matching ----
-##########################################################
 
-##############################################
 ### 2.1 Read in data ----
-##############################################
 
-############################
 # Read in uncorrected populations
 # Select only 2017 population estimates as these are the populations SIMD 2020 
 # is based on
-############################
 
 dz2011_pop_est <- readRDS(glue("{pop_archive}/", 
                                 "DataZone2011_pop_est_2011_2017.rds")) %>% 
@@ -87,17 +75,14 @@ dz2011_pop_est <- readRDS(glue("{pop_archive}/",
   rename(datazone2011 = data_zone2011, 
          intzone2011 = int_zone2011)
 
-##############################################
-### 2.2 Add higher geographies ----
-##############################################
 
-############################
+
+### 2.2 Add higher geographies ----
+
 # Add columns for higher geographies
 
 # Use the Geography Codes and Names open data file to get the IZ names
 # First need to run the httr configuration script
-# For reading dataframe, the VPN may need to be disconnected
-############################
 
 source(here("Geography", "Scottish Postcode Directory", 
             "Set httr configuration for API.R"))
@@ -115,20 +100,16 @@ dz_iz <- dplyr::tbl(src = ckan$con, from = res_id) %>%
          hscp2019 = HSCP, hscp2019name = HSCPName, 
          hb2019 = HB, hb2019name = HBName)
 
-############################
 # Match on higher geographies
 # Sort by DataZone2011 for matching
 # Create a Scotland flag
-############################
 
 dz2011_pop_est %<>%
   arrange(datazone2011) %>%
   left_join(dz_iz) %>% 
   mutate(scot = 1)
 
-############################
 # Select relevant geography names
-############################
 
 geo_names <- dz2011_pop_est %>% 
   select(datazone2011, datazone2011name, intzone2011, intzone2011name, 
@@ -136,49 +117,37 @@ geo_names <- dz2011_pop_est %>%
          hscp2016, hb2019, hb2019name, hb2018, hb2014) %>% 
   distinct()
 
-##############################################
-### 2.3 Create Geography Population Files ----
-##############################################
 
-############################
+
+### 2.3 Create Geography Population Files ----
+
 # scotland
-############################
 
 scotland_pop <- pop_function(dz2011_pop_est, "scot", "scot_pop")
 
-############################
 # hb2019
-############################
 
 hb2019_pop <- pop_function(dz2011_pop_est, "hb2019", "hb2019_pop")
 
-############################
 # hscp2019
-############################
 
 hscp2019_pop <- pop_function(dz2011_pop_est, "hscp2019", "hscp2019_pop")
 
-############################
 # ca2019
-############################
 
 ca2019_pop <- pop_function(dz2011_pop_est, "ca2019", "ca2019_pop")
 
-############################
 # dz2011
-############################
 
 dz2011_pop <- pop_function(dz2011_pop_est, "datazone2011", "datazone2011_pop")
 
-##########################################################
-### 3 - Get SIMD domains ready for matching ----
-##########################################################
 
-############################
+
+### 3 - Get SIMD domains ready for matching ----
+
 # Read in SIMD files
 # Some suppressed data has a * value
 # Change all cells with a * to NA
-############################
 
 simd_indicators <- read_xlsx(glue("{simd_filepath}/SIMD_2020v2_Indicators.xlsx"), 
                              sheet = "Data") %>% 
@@ -188,9 +157,7 @@ simd_indicators <- read_xlsx(glue("{simd_filepath}/SIMD_2020v2_Indicators.xlsx")
   clean_names() %>% 
   mutate_all(~na_if(., "*"))
 
-############################
 # Set columns still names simd2020_ to simd2020v2_
-############################
 
 simd_ranks <- read_xlsx(glue("{simd_filepath}/SIMD_2020v2_Ranks_and_Domain_", 
                              "Ranks.xlsx"), sheet = "SIMD 2020v2 ranks") %>% 
@@ -202,6 +169,7 @@ simd_ranks <- read_xlsx(glue("{simd_filepath}/SIMD_2020v2_Ranks_and_Domain_",
 
 simd_domains <- simd_ranks %>% 
   left_join(simd_indicators) 
+
 
 
 ### 4 - Calculate SIMD 2020 Scotland level population weighted categories ----
