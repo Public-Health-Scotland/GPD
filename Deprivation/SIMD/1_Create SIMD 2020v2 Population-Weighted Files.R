@@ -317,19 +317,23 @@ simd2020 %<>%
 scot_checks(simd2020, "simd2020v2_sc_quintile", "simd2020v2_sc_decile", 
             "simd2020v2_sc_vig", "simd2020v2tp15", "simd2020v2bt15")
 
-
-
+##########################################################
 ### 6 - Calculate SIMD 2020 Health Board level population weighted categories ----
+##########################################################
 
+############################
 # Match simd2020 file onto hb2019_pop
 # Arrange by health board and simd rank
+############################
 
 simd2020v2_hb2019 <- simd2020 %>%
   left_join(hb2019_pop) %>%
   arrange(hb2019, simd2020v2_rank)
 
+############################
 # Calculate cumulative population within each health board
 # Calculate the cumulative population percentage
+############################
 
 simd2020v2_hb2019 %<>%
   group_by(hb2019) %>%
@@ -337,33 +341,43 @@ simd2020v2_hb2019 %<>%
   mutate(cpop_per = (cpop/hb2019_pop)*100) %>%
   ungroup()
 
+############################
 # Create a variable for non population weighted deciles
+############################
 
 simd2020v2_hb2019 <- geo_dec(simd2020v2_hb2019)
 
+############################
 # Create a variable for non population weighted quintiles
+############################
 
 simd2020v2_hb2019 <- geo_quin(simd2020v2_hb2019)
 
+############################
 # Create a variable to calculate the difference between the cumulative 
 # population % and the target cut off points
+############################
 
 simd2020v2_hb2019 <- geo_cut_off(simd2020v2_hb2019)
 
+############################
 # Flag the points where the non population weighted deciles change
 # Set first row value for flag to 0 rather than NA
 # Calculate the difference between the cut off point differences
 # This allows us to set the cut off point for the population weighted vigintiles
+############################
 
 simd2020v2_hb2019 %<>%
   mutate(flag = if_else(hb2019 == lag(hb2019) & dec != lag(dec), 1, 0), 
          flag = if_else(is.na(flag), 0, flag), 
          d2 = if_else(flag == 1 & hb2019 == lag(hb2019), d1 + lag(d1), 0))
 
+############################
 # Create a variable for population weighted decile
 # If the difference is greater than zero, we change the cut off point for the 
 # population weighted vigintiles
 # This ensures we have as close to the target cut off point as possible
+############################
 
 simd2020v2_hb2019 %<>%
   mutate(simd2020v2_hb2019_decile = if_else(d2 <= 0, dec, 
@@ -371,23 +385,29 @@ simd2020v2_hb2019 %<>%
                                                   hb2019 == lag(hb2019), 
                                                   lag(dec), 0)))
 
+############################
 # Create Health Board level quintiles
+############################
 
 simd2020v2_hb2019 <- geo_quintile(simd2020v2_hb2019, "simd2020v2_hb2019_quintile", 
                                 "simd2020v2_hb2019_decile")
 
+############################
 # Run checks on Health Board level data
+############################
 
 geo_checks(simd2020v2_hb2019, "simd2020v2_hb2019_quintile", "simd2020v2_sc_quintile",  
            "simd2020v2_hb2019_decile", "simd2020v2_sc_decile", "hb2019")
 
-
-
+##############################################
 ### 6.1 - Manual Changes for Small NHS Boards ----
+##############################################
 
+############################
 # From the custom tables above the following changes need to be made to allow 
 # the population weighted deciles to be as close to 10%/20% as they can be
 # From the checks output we need to update Orkney, Shetland and Western Isles
+############################
 
 simd2020v2_hb2019_orkney <- simd2020v2_hb2019 %>% 
   filter(hb2019 == "S08000025")
@@ -403,13 +423,17 @@ simd2020v2_hb2019_unchanged <- simd2020v2_hb2019 %>%
          hb2019 != "S08000026" & 
          hb2019 != "S08000028")
 
+############################
 # Save as excel file for manual adjustment
+############################
 
 list_of_datasets <- list("NHS Orkney" = simd2020v2_hb2019_orkney, 
                          "NHS Shetland" = simd2020v2_hb2019_shetland, 
                          "NHS Western Isles" = simd2020v2_hb2019_western)
 
+############################
 # Select relevant columns
+############################
 
 list_of_datasets <- lapply(list_of_datasets, 
                            function(x) x %>% 
@@ -423,45 +447,59 @@ list_of_datasets <- lapply(list_of_datasets,
 #            glue("{simd_qa_filepath}/", 
 #                 "SIMD 2020v2 - Checking quintiles and deciles.xlsx"))
 
-
+##################################
 ### 6.1.1 - Orkney ----
+##################################
 
+############################
 # No changes required
+############################
 
-
+##################################
 ### 6.1.2 - Shetland ----
+##################################
 
+############################
 # Change deciles
+############################
 
 simd2020v2_hb2019_shetland %<>%
   mutate(simd2020v2_hb2019_decile = case_when(datazone2011 == "S01012409" ~ 2, 
                                             datazone2011 == "S01012387" ~ 4,  
                                             TRUE ~ simd2020v2_hb2019_decile))
 
+############################
 # Recalculate Health Board level quintiles
+############################
 
 simd2020v2_hb2019_shetland <- geo_quintile(simd2020v2_hb2019_shetland, 
                                          "simd2020v2_hb2019_quintile", 
                                          "simd2020v2_hb2019_decile")
 
+############################
 # Check changes look ok
+############################
 
 changes_check(simd2020v2_hb2019_shetland, "hb2019", "simd2020v2_hb2019_decile", 
               "simd2020v2_hb2019_quintile")
 
-
-
+##################################
 ### 6.1.3 - Western Isles ----
+##################################
 
+############################
 # No changes required
+############################
 
-
-
+##############################################
 ### 6.2 - Create Final Health Board Output ----
+##############################################
 
+############################
 # Join unchanged data with the small NHS boards
 # Select the relevant variables
 # Sort by hb2019, decile and dz2011
+############################
 
 simd2020v2_hb2019 <- simd2020v2_hb2019_unchanged %>%
   bind_rows(simd2020v2_hb2019_orkney, 
@@ -471,11 +509,12 @@ simd2020v2_hb2019 <- simd2020v2_hb2019_unchanged %>%
          simd2020v2_hb2019_quintile) %>% 
   arrange(hb2019, simd2020v2_hb2019_decile, datazone2011)
 
+############################
 # Remove dataframes
+############################
 
 rm(simd2020v2_hb2019_orkney, simd2020v2_hb2019_shetland, simd2020v2_hb2019_western, 
    simd2020v2_hb2019_unchanged)
-
 
 
 ### 7 - Calculate SIMD 2020 HSCP Level Population Weighted Categories ----
