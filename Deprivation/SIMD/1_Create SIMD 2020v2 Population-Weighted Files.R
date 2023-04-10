@@ -516,18 +516,23 @@ simd2020v2_hb2019 <- simd2020v2_hb2019_unchanged %>%
 rm(simd2020v2_hb2019_orkney, simd2020v2_hb2019_shetland, simd2020v2_hb2019_western, 
    simd2020v2_hb2019_unchanged)
 
-
+##########################################################
 ### 7 - Calculate SIMD 2020 HSCP Level Population Weighted Categories ----
+##########################################################
 
+############################
 # Match simd2020 file onto hscp2019_pop
 # Arrange by hscp and simd rank
+############################
 
 simd2020v2_hscp2019 <- simd2020 %>%
   left_join(hscp2019_pop) %>%
   arrange(hscp2019, simd2020v2_rank)
 
+############################
 # Calculate cumulative population within each hscp
 # Calculate the cumulative population percentage
+############################
 
 simd2020v2_hscp2019 %<>%
   group_by(hscp2019) %>%
@@ -535,35 +540,44 @@ simd2020v2_hscp2019 %<>%
   mutate(cpop_per = (cpop/hscp2019_pop)*100) %>%
   ungroup()
 
-
+############################
 # Create a variable for non population weighted deciles
+############################
 
 simd2020v2_hscp2019 <- geo_dec(simd2020v2_hscp2019)
 
+############################
 # Create a variable for non population weighted quintiles
+############################
 
 simd2020v2_hscp2019 <- geo_quin(simd2020v2_hscp2019)
 
+############################
 # Create a variable to calculate the difference between the cumulative 
 # population % and the target cut off points
+############################
 
 simd2020v2_hscp2019 <- geo_cut_off(simd2020v2_hscp2019) %>% 
   mutate(d1 = if_else(is.na(d1), 0, d1))
 
+############################
 # Flag the points where the non population weighted deciles change
 # Set first row value for flag to 0 rather than NA
 # Calculate the difference between the cut off point differences
 # This allows us to set the cut off point for the population weighted vigintiles
+############################
 
 simd2020v2_hscp2019 %<>%
   mutate(flag = if_else(hscp2019 == lag(hscp2019) & dec != lag(dec), 1, 0), 
          flag = if_else(is.na(flag), 0, flag), 
          d2 = if_else(flag == 1 & hscp2019 == lag(hscp2019), d1 + lag(d1), 0))
 
+############################
 # Create a variable for population weighted decile
 # If the difference is greater than zero, we change the cut off point for the 
 # population weighted vigintiles
 # This ensures we have as close to the target cut off point as possible
+############################
 
 simd2020v2_hscp2019 %<>%
   mutate(simd2020v2_hscp2019_decile = 
@@ -571,25 +585,32 @@ simd2020v2_hscp2019 %<>%
                    dec, 
                    if_else(d2 > 0 & hscp2019 == lag(hscp2019), lag(dec), 0)))
 
+############################
 # Create HSCP level quintiles
+############################
 
 simd2020v2_hscp2019 <- geo_quintile(simd2020v2_hscp2019, 
                                   "simd2020v2_hscp2019_quintile", 
                                   "simd2020v2_hscp2019_decile")
 
+############################
 # Run checks on HSCP level data
+############################
 
 geo_checks(simd2020v2_hscp2019, "simd2020v2_hscp2019_quintile", 
            "simd2020v2_sc_quintile", "simd2020v2_hscp2019_decile", 
            "simd2020v2_sc_decile", "hscp2019")
 
 
-
+##############################################
 ### 7.1 - Manual Changes for Small HSCPs ----
+##############################################
 
+############################
 # From the custom tables above the following changes need to be made to allow 
 # the population weighted deciles to be as close to 10%/20% as they can be
 # From the checks output we need to update Shetland
+############################
 
 simd2020v2_hscp2019_shetland <- simd2020v2_hscp2019 %>% 
   filter(hscp2019 == "S37000026")
@@ -598,33 +619,43 @@ simd2020v2_hscp2019_unchanged <- simd2020v2_hscp2019 %>%
   filter(hscp2019 != "S37000026")
 
 
-
+##################################
 ### 7.1.1 - Shetland ----
+##################################
 
+############################
 # Change deciles
+############################
 
 simd2020v2_hscp2019_shetland %<>%
   mutate(simd2020v2_hscp2019_decile = case_when(datazone2011 == "S01012409" ~ 2, 
                                               datazone2011 == "S01012387" ~ 4, 
                                               TRUE ~ simd2020v2_hscp2019_decile))
+
+############################
 # Recalculate HSCP level quintiles
+############################
 
 simd2020v2_hscp2019_shetland <- geo_quintile(simd2020v2_hscp2019_shetland, 
                                            "simd2020v2_hscp2019_quintile", 
                                            "simd2020v2_hscp2019_decile")
 
+############################
 # Check changes look ok
+############################
 
 changes_check(simd2020v2_hscp2019_shetland, "hscp2019", 
               "simd2020v2_hscp2019_decile", "simd2020v2_hscp2019_quintile")
 
-
-
+##############################################
 ### 7.2 - Create Final HSCP2019 Output ----
+##############################################
 
+############################
 # Join unchanged data with the small HSCPs
 # Select the relevant variables
 # Sort by hscp2019, decile and dz2011
+############################
 
 simd2020v2_hscp2019 <- simd2020v2_hscp2019_unchanged %>%
   bind_rows(simd2020v2_hscp2019_shetland) %>% 
@@ -632,7 +663,9 @@ simd2020v2_hscp2019 <- simd2020v2_hscp2019_unchanged %>%
          simd2020v2_hscp2019_quintile) %>% 
   arrange(hscp2019, simd2020v2_hscp2019_decile, datazone2011)
 
+############################
 # Remove dataframes
+############################
 
 rm(simd2020v2_hscp2019_shetland, simd2020v2_hscp2019_unchanged)
 
