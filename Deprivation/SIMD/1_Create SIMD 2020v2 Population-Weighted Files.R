@@ -170,12 +170,15 @@ ca2019_pop <- pop_function(dz2011_pop_est, "ca2019", "ca2019_pop")
 
 dz2011_pop <- pop_function(dz2011_pop_est, "datazone2011", "datazone2011_pop")
 
-
+##########################################################
 ### 3 - Get SIMD domains ready for matching ----
+##########################################################
 
+############################
 # Read in SIMD files
 # Some suppressed data has a * value
 # Change all cells with a * to NA
+############################
 
 simd_indicators <- read_xlsx(glue("{simd_filepath}/SIMD_2020v2_Indicators.xlsx"), 
                              sheet = "Data") %>% 
@@ -185,7 +188,9 @@ simd_indicators <- read_xlsx(glue("{simd_filepath}/SIMD_2020v2_Indicators.xlsx")
   clean_names() %>% 
   mutate_all(~na_if(., "*"))
 
+############################
 # Set columns still names simd2020_ to simd2020v2_
+############################
 
 simd_ranks <- read_xlsx(glue("{simd_filepath}/SIMD_2020v2_Ranks_and_Domain_", 
                              "Ranks.xlsx"), sheet = "SIMD 2020v2 ranks") %>% 
@@ -197,7 +202,6 @@ simd_ranks <- read_xlsx(glue("{simd_filepath}/SIMD_2020v2_Ranks_and_Domain_",
 
 simd_domains <- simd_ranks %>% 
   left_join(simd_indicators) 
-
 
 
 ### 4 - Calculate SIMD 2020 Scotland level population weighted categories ----
