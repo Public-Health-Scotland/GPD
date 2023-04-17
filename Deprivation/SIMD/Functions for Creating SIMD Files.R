@@ -1,5 +1,16 @@
-library(magrittr)
-library(dplyr)
+##########################################################
+# Functions for Creating SIMD files
+# Calum Purdie
+# Original date NA
+# Latest update author - Robert Mitchell
+# Latest update date - 17/04/2023
+# Latest update description 
+# Type of script - List of Functions
+# Written/run on RStudio Desktop
+# Version of R that the script was most recently run on - 3.6.1
+# Code with Functions for processing and crating SIMD Files
+# Approximate run time - instantaneous
+##########################################################
 
 
 ### 1 Calculating Populations ----
