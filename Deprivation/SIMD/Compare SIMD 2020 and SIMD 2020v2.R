@@ -12,7 +12,9 @@
 # Approximate run time - 6 minutes
 ##########################################################
 
+##########################################################
 ### 1 Housekeeping ----
+##########################################################
 
 library(magrittr)
 library(tidyr)
@@ -28,10 +30,16 @@ simd_lookup <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/",
 
 
 
-### 2 Read in SIMD Data ----
+##############################################################
+# 2. Read in SIMD Data
+##############################################################
 
 original_simd <- readRDS(glue("{simd_lookup}/DataZone2011_simd2020.rds"))
 revised_simd <- readRDS(glue("{simd_lookup}/DataZone2011_simd2020v2.rds"))
+
+##############################################################
+# 3. Check SIMD differences
+##############################################################
 
 simd_check <- function(simd2020_col, simd2020v2_col){
   
