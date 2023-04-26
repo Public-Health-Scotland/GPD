@@ -67,6 +67,18 @@ spd <- glue("{base_filepath}/1_Geography/Scottish Postcode Directory/",
 
 source(here::here("Deprivation", "SIMD", "Functions for Creating SIMD Files.R"))
 
+##############################################
+### 1.4 - Year Constants - used for dynamic column names ---- 
+##############################################
+
+Simd_year <- "2020"
+CA_HSCP_HB_year_v1 <- "2019"
+CA_HSCP_HB_year_v2 <- "2019"
+SIMD_pop_year <- "2017"
+HSCP_year_v3 <- "2016"
+HB_year_v3 <- "2014"
+DZ_IZ_year <- "2011"
+
 ##########################################################
 ### 2 Get Populations Data Ready for Matching ----
 ##########################################################
