@@ -95,10 +95,10 @@ DZ_IZ_year <- "2011"
 
 dz2011_pop_est <- readRDS(glue("{pop_archive}/", 
                                 "DataZone2011_pop_est_2011_2017.rds")) %>% 
-  filter(Year == 2017) %>% 
+  filter(Year == SIMD_pop_year) %>% 
   clean_names() %>% 
-  rename(datazone2011 = data_zone2011, 
-         intzone2011 = int_zone2011)
+  rename(!!str_c("datazone", DZ_IZ_year) := !!str_c("data_zone", DZ_IZ_year),
+         !!str_c("intzone", DZ_IZ_year) := !!str_c("int_zone", DZ_IZ_year))
 
 ##############################################
 ### 2.2 Add higher geographies ----
