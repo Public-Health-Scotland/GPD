@@ -406,7 +406,9 @@ manual_changes <- function(data, decile){
   
 }
 
-# Check changes look ok
+##########################################################
+### 7.2 Check changes look ok
+##########################################################
 
 changes_check <- function(data, geography, decile, quintile){
   
@@ -425,10 +427,12 @@ changes_check <- function(data, geography, decile, quintile){
 }
 
 
-
-### 7 SPSS ----
-
-# Rename SPSS columns
+##########################################################
+### 8 SPSS ----
+##########################################################
+##########################################################
+### 8.1 Rename SPSS columns
+##########################################################
 
 spss_names <- function(data){
   
