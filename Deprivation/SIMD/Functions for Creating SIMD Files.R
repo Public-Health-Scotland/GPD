@@ -185,11 +185,11 @@ vig_cpop <- function(data){
 }
 
 
-
+##########################################################
 ### 4 Cut-Off Points ----
-
-# Calculate the difference between the cumulative population and the target 
-# cut off points
+##########################################################
+### 4.1 Calculate the difference between the cumulative population and the target cut off points
+##########################################################
 
 vig_cut_off <- function(data){ 
   
@@ -235,9 +235,9 @@ vig_cut_off <- function(data){
     mutate(d1 = if_else(is.na(d1), 0, d1))
   
 }
-
-# Calculate the difference between the cumulative population % and the target 
-# cut off points
+##########################################################
+### 4.2 Calculate the difference between the cumulative population % and the target cut off points
+##########################################################
 
 geo_cut_off <- function(data){
   
@@ -265,14 +265,18 @@ geo_cut_off <- function(data){
 }
 
 
-
+##########################################################
 ### 5 Check Functions ----
-
-# Run checks on Scotland level data
+##########################################################
+##########################################################
+### 5.1 Run checks on Scotland level data
+##########################################################
 
 scot_checks <- function(data, quin_col, dec_col, vig_col, tp15, bt15){
   
-  # Check vigintiles, deciles and quintiles align correctly
+  ##########################################################
+  ### 5.2 Check vigintiles, deciles and quintiles align correctly
+  ##########################################################
   
   data %>% 
     group_by(!!as.name(quin_col), !!as.name(dec_col)) %>% 
@@ -284,7 +288,9 @@ scot_checks <- function(data, quin_col, dec_col, vig_col, tp15, bt15){
     count() %>% 
     print()
   
-  # Check quintile populations look ok
+  ##########################################################
+  ### 5.3 Check quintile populations look ok
+  ##########################################################
   
   data %>%
     group_by(!!as.name(quin_col)) %>%
@@ -292,7 +298,9 @@ scot_checks <- function(data, quin_col, dec_col, vig_col, tp15, bt15){
     mutate(percentage = total*100/sum(total)) %>% 
     print()
   
-  # Check decile populations look ok
+  ##########################################################
+  ### 5.4 Check decile populations look ok
+  ##########################################################
   
   data %>%
     group_by(!!as.name(dec_col)) %>%
@@ -300,7 +308,9 @@ scot_checks <- function(data, quin_col, dec_col, vig_col, tp15, bt15){
     mutate(percentage = total*100/sum(total)) %>% 
     print()
   
-  # Check vigintile populations look ok
+  ##########################################################
+  ### 5.5 Check vigintile populations look ok
+  ##########################################################
   
   data %>%
     group_by(!!as.name(vig_col)) %>%
@@ -308,14 +318,18 @@ scot_checks <- function(data, quin_col, dec_col, vig_col, tp15, bt15){
     mutate(percentage = total*100/sum(total)) %>% 
     print()
   
-  # Check top 15% is correct
+  ##########################################################
+  ### 5.6 Check top 15% is correct
+  ##########################################################
   
   data %>% 
     group_by(!!as.name(vig_col), !!as.name(tp15)) %>% 
     count() %>% 
     print()
   
-  # Check bottom 15% is correct
+  ##########################################################
+  ### 5.7 Check bottom 15% is correct
+  ##########################################################
   
   data %>% 
     group_by(!!as.name(vig_col), !!as.name(bt15)) %>% 
@@ -325,19 +339,24 @@ scot_checks <- function(data, quin_col, dec_col, vig_col, tp15, bt15){
 }
 
 
-
-# Run checks on smaller geography level data
+##########################################################
+### 6 Run checks on smaller geography level data
+##########################################################
 
 geo_checks <- function(data, quin_col, scot_quin, dec_col, scot_dec, geography){
   
-  # Check deciles and quintiles align correctly
+  ##########################################################
+  ### 6.1 Check deciles and quintiles align correctly
+  ##########################################################
   
   data %>% 
     group_by(!!as.name(quin_col), !!as.name(dec_col)) %>% 
     count() %>% 
     print(n = Inf)
   
-  # Compare Scotland deciles and quintiles within geography
+  ##########################################################
+  ### 6.2 Compare Scotland deciles and quintiles within geography
+  ##########################################################
   
   data %>% 
     group_by(!!as.name(scot_quin), !!as.name(quin_col)) %>% 
@@ -349,7 +368,9 @@ geo_checks <- function(data, quin_col, scot_quin, dec_col, scot_dec, geography){
     count() %>% 
     print(n = Inf)
   
-  # Check quintile populations look ok
+  ##########################################################
+  ### 6.3 Check quintile populations look ok
+  ##########################################################
   
   data %>%
     group_by(!!as.name(geography), !!as.name(quin_col)) %>%
@@ -357,7 +378,9 @@ geo_checks <- function(data, quin_col, scot_quin, dec_col, scot_dec, geography){
     mutate(percentage = total*100/sum(total)) %>% 
     print(n = Inf)
   
-  # Check decile populations look ok
+  ##########################################################
+  ### 6.4 Check decile populations look ok
+  ##########################################################
   
   data %>%
     group_by(!!as.name(geography), !!as.name(dec_col)) %>%
@@ -367,10 +390,12 @@ geo_checks <- function(data, quin_col, scot_quin, dec_col, scot_dec, geography){
 }
 
 
-
-### 6 Manual Changes ----
-
-# Change deciles for small areas
+##########################################################
+### 7 Manual Changes ----
+##########################################################
+##########################################################
+### 7.1 Change deciles for small areas
+##########################################################
 
 manual_changes <- function(data, decile){
   
