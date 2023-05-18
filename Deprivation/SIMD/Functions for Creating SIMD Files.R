@@ -13,9 +13,12 @@
 ##########################################################
 
 
+##########################################################
 ### 1 Calculating Populations ----
-
-# Calculate populations for geography
+##########################################################
+##########################################################
+### 1.1 Calculate populations for geography
+##########################################################
 
 pop_function <- function(data, column, new_column){
   
@@ -27,10 +30,12 @@ pop_function <- function(data, column, new_column){
 }
 
 
-
+##########################################################
 ### 2 Non Population Weighted ----
-
-# Calculate datazone based non population weighted vigintiles
+##########################################################
+##########################################################
+### 2.1 Calculate datazone based non population weighted vigintiles
+##########################################################
 
 vig_function <- function(data, vig_col, col){
   
@@ -58,9 +63,9 @@ vig_function <- function(data, vig_col, col){
                        !!as.name(col) > 6627 & !!as.name(col) <= 6976 ~ 20))
   
 }
-
-# Create datazone based non population weighted deciles
-
+##########################################################
+### 2.2 Create datazone based non population weighted deciles
+##########################################################
 dec_function <- function(data, dec_col, col){
   
   data %<>% 
@@ -77,8 +82,9 @@ dec_function <- function(data, dec_col, col){
                        !!as.name(col) == 19 | !!as.name(col) == 20 ~ 10))
   
 }
-
-# Create datazone based non population weighted quintiles
+##########################################################
+### 2.3 Create datazone based non population weighted quintiles
+##########################################################
 
 quin_function <- function(data, quin_col, col){
   
@@ -92,8 +98,9 @@ quin_function <- function(data, quin_col, col){
   
 }
 
-# Create a variable for non population weighted deciles
-
+##########################################################
+### 2.4 Create a variable for non population weighted deciles
+##########################################################
 geo_dec <- function(data){
   
   data %<>%
@@ -110,7 +117,9 @@ geo_dec <- function(data){
   
 }
 
-# Create a variable for non population weighted quintiles
+##########################################################
+### 2.5 Create a variable for non population weighted quintiles
+##########################################################
 
 geo_quin <- function(data){
   
@@ -123,7 +132,9 @@ geo_quin <- function(data){
   
 }
 
-# Create geography level quintiles
+##########################################################
+### 2.6 Create geography level quintiles
+##########################################################
 
 geo_quintile <- function(data, quin_col, dec_col){
   
@@ -141,11 +152,12 @@ geo_quintile <- function(data, quin_col, dec_col){
   
 }
 
-
+##########################################################
 ### 3 Population Weighted ----
-
-# Calcuate population weighted vigintiles
-
+##########################################################
+##########################################################
+### 3.1 Calcuate population weighted vigintiles
+##########################################################
 vig_cpop <- function(data){
   
   data %<>%
