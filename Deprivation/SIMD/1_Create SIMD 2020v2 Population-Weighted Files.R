@@ -122,11 +122,26 @@ dz_iz <- dplyr::tbl(src = ckan$con, from = res_id) %>%
   as_tibble() %>% 
   select(DataZone, DataZoneName, IntZone, IntZoneName, CA, CAName, HSCP, 
          HSCPName, HB, HBName) %>% 
-  rename(datazone2011 = DataZone, datazone2011name = DataZoneName, 
-         intzone2011 = IntZone, intzone2011name = IntZoneName, 
-         ca2019 = CA, ca2019name = CAName, 
-         hscp2019 = HSCP, hscp2019name = HSCPName, 
-         hb2019 = HB, hb2019name = HBName)
+  
+  # Datazone renaming
+  rename(!!str_c("datazone", DZ_IZ_year) := !!str_c("DataZone"),
+         !!str_c("datazone", DZ_IZ_year,"name") := !!str_c("DataZoneName"),
+         
+  # Intzone renaming
+         !!str_c("intzone", DZ_IZ_year) := !!str_c("IntZone"),
+         !!str_c("intzone", DZ_IZ_year,"name") := !!str_c("IntZoneName"),
+  
+  # CA renaming
+         !!str_c("ca", CA_HSCP_HB_year_v1) := !!str_c("CA"),
+         !!str_c("ca", CA_HSCP_HB_year_v1,"name") := !!str_c("CAName"),
+  
+  # HSCP renaming
+         !!str_c("hscp", CA_HSCP_HB_year_v1) := !!str_c("HSCP"),
+         !!str_c("hscp", CA_HSCP_HB_year_v1,"name") := !!str_c("HSCPName"),
+  
+  # HB renaming
+         !!str_c("hb", CA_HSCP_HB_year_v1) := !!str_c("HB"),
+         !!str_c("hb", CA_HSCP_HB_year_v1,"name") := !!str_c("HBName"))
 
 ############################
 # Match on higher geographies
