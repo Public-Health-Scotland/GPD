@@ -73,7 +73,7 @@ source(here::here("Deprivation", "SIMD", "Functions for Creating SIMD Files.R"))
 
 Simd_year <- "2020"
 CA_HSCP_HB_year_v1 <- "2019"
-CA_HSCP_HB_year_v2 <- "2019"
+CA_HSCP_HB_year_v2 <- "2018"
 SIMD_pop_year <- "2017"
 HSCP_year_v3 <- "2016"
 HB_year_v3 <- "2014"
@@ -150,7 +150,7 @@ dz_iz <- dplyr::tbl(src = ckan$con, from = res_id) %>%
 ############################
 
 dz2011_pop_est %<>%
-  arrange(datazone2011) %>%
+  arrange_(.dots=str_c("datazone", DZ_IZ_year)) %>%
   left_join(dz_iz) %>% 
   mutate(scot = 1)
 
@@ -159,9 +159,34 @@ dz2011_pop_est %<>%
 ############################
 
 geo_names <- dz2011_pop_est %>% 
-  select(datazone2011, datazone2011name, intzone2011, intzone2011name, 
-         ca2019, ca2019name, ca2018, ca2011, hscp2019, hscp2019name, hscp2018, 
-         hscp2016, hb2019, hb2019name, hb2018, hb2014) %>% 
+  
+  # Select DZ variables
+  select(str_c("datazone", DZ_IZ_year),
+         str_c("datazone", DZ_IZ_year,"name"),
+         
+  # Select IZ variables
+         str_c("intzone", DZ_IZ_year),
+         str_c("intzone", DZ_IZ_year,"name"),
+  
+  # Select CA variables
+         str_c("ca", CA_HSCP_HB_year_v1),
+         str_c("ca", CA_HSCP_HB_year_v1,"name"),
+         str_c("ca", CA_HSCP_HB_year_v2),
+         str_c("ca", DZ_IZ_year),
+  
+  # Select HSCP variables
+         str_c("hscp", CA_HSCP_HB_year_v1),
+         str_c("hscp", CA_HSCP_HB_year_v1,"name"),
+         str_c("hscp", CA_HSCP_HB_year_v2),
+         str_c("hscp", HSCP_year_v3),
+  
+  # Select HB variables
+         str_c("hb", CA_HSCP_HB_year_v1),
+         str_c("hb", CA_HSCP_HB_year_v1,"name"),
+         str_c("hb", CA_HSCP_HB_year_v2),
+         str_c("hb", HB_year_v3)) %>%
+  
+  # Ensure unique geographies
   distinct()
 
 ##############################################
