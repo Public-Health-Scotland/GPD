@@ -275,7 +275,7 @@ simd2020 <- simd_ranks %>%
   left_join(dz2011_pop) %>%
   mutate(scot = 1) %>%
   left_join(scotland_pop) %>%
-  arrange(simd2020v2_rank) %>%
+  arrange_(.dots=str_c("simd", Simd_year, "v2_rank")) %>%
   mutate(cpop = cumsum(datazone2011_pop), 
          cpop_per = (cpop/scot_pop)*100)
 
