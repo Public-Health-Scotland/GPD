@@ -237,7 +237,7 @@ simd_indicators <- read_xlsx(glue("{simd_filepath}/SIMD_2020v2_Indicators.xlsx")
                              sheet = "Data") %>% 
   select(-c(Intermediate_Zone, Council_area, Total_population, 
             Working_age_population)) %>% 
-  rename(datazone2011 = Data_Zone) %>% 
+  rename(!!str_c("datazone", DZ_IZ_year) := !!str_c("Data_Zone")) %>% 
   clean_names() %>% 
   mutate_all(~na_if(., "*"))
 
@@ -249,9 +249,9 @@ simd_ranks <- read_xlsx(glue("{simd_filepath}/SIMD_2020v2_Ranks_and_Domain_",
                              "Ranks.xlsx"), sheet = "SIMD 2020v2 ranks") %>% 
   select(-c(Intermediate_Zone, Council_area, Total_population, 
             Working_age_population)) %>% 
-  rename(datazone2011 = Data_Zone) %>% 
+  rename(!!str_c("datazone", DZ_IZ_year) := !!str_c("Data_Zone")) %>% 
   clean_names() %>% 
-  setnames(gsub("simd2020_", "simd2020v2_", names(.)))
+  setnames(gsub(str_c("simd", Simd_year, "_"), str_c("simd", Simd_year, "v2_"), names(.)))
 
 simd_domains <- simd_ranks %>% 
   left_join(simd_indicators) 
