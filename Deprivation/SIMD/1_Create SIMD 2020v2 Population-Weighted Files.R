@@ -270,13 +270,17 @@ simd_domains <- simd_ranks %>%
 # Calculate the cumulative population percentage
 ############################
 
+# Variable for cumulative population
+cum_var <- str_c("datazone",DZ_IZ_year,"_pop")
+
+# Process Data
 simd2020 <- simd_ranks %>%
   left_join(geo_names) %>%
   left_join(dz2011_pop) %>%
   mutate(scot = 1) %>%
   left_join(scotland_pop) %>%
   arrange_(.dots=str_c("simd", Simd_year, "v2_rank")) %>%
-  mutate(cpop = cumsum(datazone2011_pop), 
+  mutate(cpop = cumsum(.data[[cum_var[[1]]]]),
          cpop_per = (cpop/scot_pop)*100)
 
 ############################
