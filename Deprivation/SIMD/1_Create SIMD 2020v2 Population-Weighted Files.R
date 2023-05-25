@@ -287,7 +287,7 @@ simd2020 <- simd_ranks %>%
 # Create datazone based non population weighted vigintiles
 ############################
 
-simd2020 <- vig_function(simd2020, "npw_vig", "simd2020v2_rank")
+simd2020 <- vig_function(simd2020, "npw_vig", str_c("simd",Simd_year,"v2_rank"))
 
 ############################
 # Create datazone based non population weighted deciles
