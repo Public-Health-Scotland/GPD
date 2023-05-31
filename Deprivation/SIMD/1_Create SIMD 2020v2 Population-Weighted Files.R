@@ -385,17 +385,21 @@ scot_checks(simd2020, glue("simd{Simd_year}v2_sc_quintile"), glue("simd{Simd_yea
 
 simd2020v2_hb2019 <- simd2020 %>%
   left_join(hb2019_pop) %>%
-  arrange(hb2019, simd2020v2_rank)
+  arrange_(.dots=str_c("hb", CA_HSCP_HB_year_v1),str_c("simd", Simd_year,"v2_rank"))
 
 ############################
 # Calculate cumulative population within each health board
 # Calculate the cumulative population percentage
 ############################
 
+# Variable for cumulative population by Health Board Breakdown
+hb_pop_var <- str_c("hb",CA_HSCP_HB_year_v1,"_pop")
+
 simd2020v2_hb2019 %<>%
-  group_by(hb2019) %>%
-  mutate(cpop = cumsum(datazone2011_pop)) %>%
-  mutate(cpop_per = (cpop/hb2019_pop)*100) %>%
+  group_by_(.dots=str_c("hb", CA_HSCP_HB_year_v1)) %>%
+  mutate(cpop = cumsum(.data[[cum_var[[1]]]])) %>%
+  mutate(cpop_per = (cpop/.data[[hb_pop_var[[1]]]])*100) %>%
+  # mutate(cpop_per = (cpop/hb2019_pop)*100) %>%
   ungroup()
 
 ############################
@@ -424,10 +428,13 @@ simd2020v2_hb2019 <- geo_cut_off(simd2020v2_hb2019)
 # This allows us to set the cut off point for the population weighted vigintiles
 ############################
 
+# Variable for cumulative population by Health Board Breakdown
+hb_var <- str_c("hb",CA_HSCP_HB_year_v1)
+
 simd2020v2_hb2019 %<>%
-  mutate(flag = if_else(hb2019 == lag(hb2019) & dec != lag(dec), 1, 0), 
+  mutate(flag = if_else(.data[[hb_var[[1]]]] == lag(.data[[hb_var[[1]]]]) & dec != lag(dec), 1, 0), 
          flag = if_else(is.na(flag), 0, flag), 
-         d2 = if_else(flag == 1 & hb2019 == lag(hb2019), d1 + lag(d1), 0))
+         d2 = if_else(flag == 1 & .data[[hb_var[[1]]]] == lag(.data[[hb_var[[1]]]]), d1 + lag(d1), 0))
 
 ############################
 # Create a variable for population weighted decile
@@ -437,24 +444,24 @@ simd2020v2_hb2019 %<>%
 ############################
 
 simd2020v2_hb2019 %<>%
-  mutate(simd2020v2_hb2019_decile = if_else(d2 <= 0, dec, 
+  mutate("simd{Simd_year}v2_hb{CA_HSCP_HB_year_v1}_decile" := if_else(d2 <= 0, dec, 
                                           if_else(d2 > 0 & 
-                                                  hb2019 == lag(hb2019), 
+                                                    .data[[hb_var[[1]]]] == lag(.data[[hb_var[[1]]]]), 
                                                   lag(dec), 0)))
 
 ############################
 # Create Health Board level quintiles
 ############################
 
-simd2020v2_hb2019 <- geo_quintile(simd2020v2_hb2019, "simd2020v2_hb2019_quintile", 
-                                "simd2020v2_hb2019_decile")
+simd2020v2_hb2019 <- geo_quintile(simd2020v2_hb2019, glue("simd{Simd_year}v2_hb{CA_HSCP_HB_year_v1}_quintile"), 
+                                glue("simd{Simd_year}v2_hb{CA_HSCP_HB_year_v1}_decile"))
 
 ############################
 # Run checks on Health Board level data
 ############################
 
-geo_checks(simd2020v2_hb2019, "simd2020v2_hb2019_quintile", "simd2020v2_sc_quintile",  
-           "simd2020v2_hb2019_decile", "simd2020v2_sc_decile", "hb2019")
+geo_checks(simd2020v2_hb2019, glue("simd{Simd_year}v2_hb{CA_HSCP_HB_year_v1}_quintile"), glue("simd{Simd_year}v2_sc_quintile"),  
+           glue("simd{Simd_year}v2_hb{CA_HSCP_HB_year_v1}_decile"), glue("simd{Simd_year}v2_sc_decile"), glue("hb{CA_HSCP_HB_year_v1}"))
 
 ##############################################
 ### 6.1 - Manual Changes for Small NHS Boards ----
