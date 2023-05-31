@@ -336,22 +336,22 @@ simd2020 %<>%
 ############################
 
 simd2020 %<>%
-  mutate(simd2020v2_sc_vig = if_else(d2 <= 0, vig, 
-                                   if_else(d2 > 0 & 
-                                          scot == lag(scot), lag(vig), 0)))
+  mutate("simd{Simd_year}v2_sc_vig" :=  if_else(d2 <= 0, vig, 
+                                                if_else(d2 > 0 & 
+                                                          scot == lag(scot), lag(vig), 0)))
 
 ############################
 # Create Scotland level deciles
 ############################
 
-simd2020 <- dec_function(simd2020, "simd2020v2_sc_decile", "simd2020v2_sc_vig")
+simd2020 <- dec_function(simd2020, glue("simd{Simd_year}v2_sc_decile"), glue("simd{Simd_year}v2_sc_vig"))
 
 ############################
 # Create Scotland level quintiles
 ############################
 
-simd2020 <- quin_function(simd2020, "simd2020v2_sc_quintile", 
-                          "simd2020v2_sc_decile")
+simd2020 <- quin_function(simd2020, glue("simd{Simd_year}v2_sc_quintile"), 
+                          glue("simd{Simd_year}v2_sc_decile"))
 
 ############################
 # Create variables for 15% most and least deprived
@@ -359,20 +359,20 @@ simd2020 <- quin_function(simd2020, "simd2020v2_sc_quintile",
 ############################
 
 simd2020 %<>%
-  mutate(simd2020v2tp15 = if_else(simd2020v2_sc_vig == 1 | 
-                                  simd2020v2_sc_vig == 2 | 
-                                  simd2020v2_sc_vig == 3, 1, 0), 
-         simd2020v2bt15 = if_else(simd2020v2_sc_vig == 18 | 
-                                  simd2020v2_sc_vig == 19 | 
-                                  simd2020v2_sc_vig == 20, 1, 0)) %>%
-  arrange(datazone2011)
+  mutate("simd{Simd_year}v2tp15" := if_else(simd2020v2_sc_vig == 1 | 
+                                              simd2020v2_sc_vig == 2 | 
+                                              simd2020v2_sc_vig == 3, 1, 0), 
+         "simd{Simd_year}v2bt15" := if_else(simd2020v2_sc_vig == 18 | 
+                                              simd2020v2_sc_vig == 19 | 
+                                              simd2020v2_sc_vig == 20, 1, 0)) %>%
+  arrange_(.dots=str_c("datazone", DZ_IZ_year))
 
 ############################
 # Run checks on Scotland level data
 ############################
 
-scot_checks(simd2020, "simd2020v2_sc_quintile", "simd2020v2_sc_decile", 
-            "simd2020v2_sc_vig", "simd2020v2tp15", "simd2020v2bt15")
+scot_checks(simd2020, glue("simd{Simd_year}v2_sc_quintile"), glue("simd{Simd_year}v2_sc_decile"), 
+            glue("simd{Simd_year}v2_sc_vig"), glue("simd{Simd_year}v2tp15"), glue("simd{Simd_year}v2bt15"))
 
 ##########################################################
 ### 6 - Calculate SIMD 2020 Health Board level population weighted categories ----
