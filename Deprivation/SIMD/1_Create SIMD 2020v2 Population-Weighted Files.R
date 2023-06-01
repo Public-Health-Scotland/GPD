@@ -67,6 +67,9 @@ spd <- glue("{base_filepath}/1_Geography/Scottish Postcode Directory/",
 
 source(here::here("Deprivation", "SIMD", "Functions for Creating SIMD Files.R"))
 
+# Not in function
+`%notin%` <- Negate(`%in%`)
+
 ##############################################
 ### 1.4 - Year Constants - used for dynamic column names ---- 
 ##############################################
@@ -399,7 +402,6 @@ simd2020v2_hb2019 %<>%
   group_by_(.dots=str_c("hb", CA_HSCP_HB_year_v1)) %>%
   mutate(cpop = cumsum(.data[[cum_var[[1]]]])) %>%
   mutate(cpop_per = (cpop/.data[[hb_pop_var[[1]]]])*100) %>%
-  # mutate(cpop_per = (cpop/hb2019_pop)*100) %>%
   ungroup()
 
 ############################
@@ -473,19 +475,17 @@ geo_checks(simd2020v2_hb2019, glue("simd{Simd_year}v2_hb{CA_HSCP_HB_year_v1}_qui
 # From the checks output we need to update Orkney, Shetland and Western Isles
 ############################
 
-simd2020v2_hb2019_orkney <- simd2020v2_hb2019 %>% 
-  filter(hb2019 == "S08000025")
+simd2020v2_hb2019_orkney <- simd2020v2_hb2019 %>%
+  filter(!!sym(str_c("hb",CA_HSCP_HB_year_v1)) %in% !!"S08000025")
 
-simd2020v2_hb2019_shetland <- simd2020v2_hb2019 %>% 
-  filter(hb2019 == "S08000026")
+simd2020v2_hb2019_shetland <- simd2020v2_hb2019 %>%
+  filter(!!sym(str_c("hb",CA_HSCP_HB_year_v1)) %in% !!"S08000026")
 
 simd2020v2_hb2019_western <- simd2020v2_hb2019 %>%
-  filter(hb2019 == "S08000028")
+  filter(!!sym(str_c("hb",CA_HSCP_HB_year_v1)) %in% !!"S08000028")
 
-simd2020v2_hb2019_unchanged <- simd2020v2_hb2019 %>% 
-  filter(hb2019 != "S08000025" & 
-         hb2019 != "S08000026" & 
-         hb2019 != "S08000028")
+simd2020v2_hb2019_unchanged <- simd2020v2_hb2019 %>%
+  filter(!!sym(str_c("hb",CA_HSCP_HB_year_v1)) %notin% !!c("S08000025","S08000026","S08000028"))
 
 ############################
 # Save as excel file for manual adjustment
@@ -501,10 +501,11 @@ list_of_datasets <- list("NHS Orkney" = simd2020v2_hb2019_orkney,
 
 list_of_datasets <- lapply(list_of_datasets, 
                            function(x) x %>% 
-                             select(datazone2011, simd2020v2_rank, 
-                                    datazone2011_pop, cpop, cpop_per, d1, flag, 
-                                    d2, hb2019_pop, dec, simd2020v2_hb2019_decile, 
-                                    quin, simd2020v2_hb2019_quintile))
+                             select(str_c("datazone",DZ_IZ_year), str_c("simd",Simd_year,"v2_rank"), 
+                                    str_c("datazone",DZ_IZ_year,"_pop"), cpop, cpop_per, d1, flag, 
+                                    d2, str_c("hb",CA_HSCP_HB_year_v1,"_pop"), dec, 
+                                    str_c("simd",Simd_year,"v2_hb",CA_HSCP_HB_year_v1,"_decile"), quin, 
+                                    str_c("simd",Simd_year,"v2_hb",CA_HSCP_HB_year_v1,"_quintile")))
 
 
 # write.xlsx(list_of_datasets, 
