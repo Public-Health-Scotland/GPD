@@ -203,25 +203,25 @@ scotland_pop <- pop_function(dz2011_pop_est, "scot", "scot_pop")
 # hb2019
 ############################
 
-hb2019_pop <- pop_function(dz2011_pop_est, "hb2019", "hb2019_pop")
+hb2019_pop <- pop_function(dz2011_pop_est, glue("hb{CA_HSCP_HB_year_v1}"), glue("hb{CA_HSCP_HB_year_v1}_pop"))
 
 ############################
 # hscp2019
 ############################
 
-hscp2019_pop <- pop_function(dz2011_pop_est, "hscp2019", "hscp2019_pop")
+hscp2019_pop <- pop_function(dz2011_pop_est, glue("hscp{CA_HSCP_HB_year_v1}"), glue("hscp{CA_HSCP_HB_year_v1}_pop"))
 
 ############################
 # ca2019
 ############################
 
-ca2019_pop <- pop_function(dz2011_pop_est, "ca2019", "ca2019_pop")
+ca2019_pop <- pop_function(dz2011_pop_est, glue("ca{CA_HSCP_HB_year_v1}"), glue("ca{CA_HSCP_HB_year_v1}_pop"))
 
 ############################
 # dz2011
 ############################
 
-dz2011_pop <- pop_function(dz2011_pop_est, "datazone2011", "datazone2011_pop")
+dz2011_pop <- pop_function(dz2011_pop_est, glue("datazone{DZ_IZ_year}"), glue("datazone{DZ_IZ_year}_pop"))
 
 ##########################################################
 ### 3 - Get SIMD domains ready for matching ----
