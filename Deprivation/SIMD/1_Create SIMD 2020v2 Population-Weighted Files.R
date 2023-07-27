@@ -361,13 +361,13 @@ simd2020 <- quin_function(simd2020, glue("simd{Simd_year}v2_sc_quintile"),
 # Sort by dz2011
 ############################
 
+
+# Variable for population weighted vigintiles
+v2_sc_var <- str_c("simd",Simd_year,"v2_sc_vig")
+
 simd2020 %<>%
-  mutate("simd{Simd_year}v2tp15" := if_else(simd2020v2_sc_vig == 1 | 
-                                              simd2020v2_sc_vig == 2 | 
-                                              simd2020v2_sc_vig == 3, 1, 0), 
-         "simd{Simd_year}v2bt15" := if_else(simd2020v2_sc_vig == 18 | 
-                                              simd2020v2_sc_vig == 19 | 
-                                              simd2020v2_sc_vig == 20, 1, 0)) %>%
+  mutate("simd{Simd_year}v2tp15" := if_else(.data[[v2_sc_var[[1]]]] %in% c(1,2,3), 1, 0), 
+         "simd{Simd_year}v2bt15" := if_else(.data[[v2_sc_var[[1]]]] %in% c(18,19,20), 1, 0)) %>%
   arrange_(.dots=str_c("datazone", DZ_IZ_year))
 
 ############################
