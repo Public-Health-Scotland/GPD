@@ -15,26 +15,23 @@
 
 
 ### 1 - Housekeeping ----
+rm(list = ls())
 
+#### libaries 
+if(is.na(utils::packageDate("pacman"))) install.packages("pacman")
+if (!pacman::p_isinstalled("friendlyloader")){pacman::p_install_gh("RosalynLP/friendlyloader")}
 # Read in packages from library
 
-library(magrittr)
-library(dplyr)
-library(data.table)
-library(tidylog)
-library(janitor)
-library(glue)
+pacman::p_load( glue, janitor, tidylog, data.table, magrittr,
+               dplyr, arrow)
+
 
 # Set filepaths
 
-# lookup_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
-#                         "/2_Population/Small Area Population estimates/", 
-#                         "Lookup Files/R Files")
-lookup_filepath <- glue("//data/geography/Population/Small Area Population estimates/Lookup Files/R Files")
-od_filepath     <- glue("//data/geography/Population/Small Area Population estimates/Lookup Files/CKAN Open Data")
-# od_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Publications/", 
-#                     "Open Data (Non Health Topic)/Data/", 
-#                     "OD1700007 - Population Estimates")
+
+lookup_filepath <- "//data/geography/Population/Small Area Population estimates/Lookup Files/R Files"
+od_filepath     <- "//data/geography/Population/Small Area Population estimates/Lookup Files/CKAN Open Data"
+
 
 # Set date for open data filenames
 
@@ -46,10 +43,10 @@ year <- 2022
 
 # Set datasets to use
 
-new_dz_estimates       <- glue("DataZone2011_pop_est_2011_{year}")
-new_dz_estimates_5y    <- glue("DataZone2011_pop_est_5year_agegroups_2011_{year}")
-new_iz_estimates       <- glue("IntZone2011_pop_est_2011_{year}")
-new_iz_estimates_5y    <- glue("IntZone2011_pop_est_5year_agegroups_2011_{year}")
+new_dz_estimates       <- glue("DataZone2011_pop_est_2011_{year}_REBASED")
+new_dz_estimates_5y    <- glue("DataZone2011_pop_est_5year_agegroups_2011_{year}_REBASED")
+new_iz_estimates       <- glue("IntZone2011_pop_est_2011_{year}_REBASED")
+new_iz_estimates_5y    <- glue("IntZone2011_pop_est_5year_agegroups_2011_{year}_REBASED")
 dz_estimates_2001_2010 <- "DataZone2011_pop_est_2001_2010"
 iz_estimates_2001_2010 <- "IntZone2011_pop_est_2001_2010"
 
@@ -128,7 +125,7 @@ dz2011_pop_est_od %<>%
 
 # Save as csv
 
-fwrite(dz2011_pop_est_od, glue("{od_filepath}/DZ2011-pop-est_{date}.csv"), 
+fwrite(dz2011_pop_est_od, glue("{od_filepath}/DZ2011-pop-est_REBASED_{date}.csv"), 
        na = "")
 
 
@@ -207,5 +204,5 @@ iz2011_pop_est_OD %<>%
 
 # Save as csv
 
-fwrite(iz2011_pop_est_OD, glue("{od_filepath}/IZ2011-pop-est_{date}.csv"), 
+fwrite(iz2011_pop_est_OD, glue("{od_filepath}/IZ2011-pop-est_REBASED_{date}.csv"), 
        na = "")

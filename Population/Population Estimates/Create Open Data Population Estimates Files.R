@@ -2,44 +2,39 @@
 # Create Open Data Population Estimates Files
 # Calum Purdie
 # Original date 16/04/2019
-# Latest update author - Calum Purdie
-# Latest update date - 30/06/2020
+# Latest update author - Gerald Leung
+# Latest update date - 26/03/2024
 # Latest update description - formatting code
 # Type of script - Creation
 # Written/run on RStudio Desktop
-# Version of R that the script was most recently run on - 3.5.1
+# Version of R that the script was most recently run on - 4.0.2
 # Code for creating open data files for population estimates
 # Approximate run time - 10 seconds
 ##########################################################
 
 ### 1 - Housekeeping ----
 
-library(magrittr)
-library(tidyr)
-library(dplyr)
-library(data.table)
-library(tidylog)
-library(glue)
+rm(list = ls())
+
+#### libaries 
+if(is.na(utils::packageDate("pacman"))) install.packages("pacman")
+if (!pacman::p_isinstalled("friendlyloader")){pacman::p_install_gh("RosalynLP/friendlyloader")}
+
+pacman::p_load(magrittr, tidyr,dplyr, data.table, tidylog, glue)
 
 # Set filepaths
+base_filepath <- "/data/geography/Population/Population Estimates"
 
-base_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI")
+data_filepath <- glue("{base_filepath}/", "Lookup Files/R Files")
 
-data_filepath <- glue("{base_filepath}/Referencing & Standards/GPD/", 
-                      "2_Population/Population Estimates/Lookup Files/R Files")
-
-od_filepath <- glue("{base_filepath}/Publications/Open Data (Non Health Topic)/",
-                    "Data/OD1700007 - Population Estimates")
+od_filepath <- glue("{base_filepath}/", "Open Data")
 
 # Set date for filenames
-
 date <- strftime(Sys.Date(), format = "%d%m%Y")
 
 # Set years
-
-start <- 1981
-end <- 2019
-
+start <- "1981"
+end <-"2024"
 
 
 ### 2 - Create function to read in population data and restructure ----
@@ -93,28 +88,18 @@ geo_pop <- function(filepath, variable){
 }
 
 
-
 ### 3 - Read in Population Estimates ----
 
 # Read in Council Area estimates
-
-CA2019_pop_est <- geo_pop(filepath = "CA2019_pop_est", 
-                          variable = "ca2019")
+CA2019_pop_est <- geo_pop(filepath = "CA2019_pop_est", variable = "ca2019")
 
 # Read in Health Board estimates
-
-HB2019_pop_est <- geo_pop(filepath = "HB2019_pop_est", 
-                          variable = "hb2019")
+HB2019_pop_est <- geo_pop(filepath = "HB2019_pop_est", variable = "hb2019")
 
 # Read in HSCP estimates
-
-HSCP2019_pop_est <- geo_pop(filepath = "HSCP2019_pop_est", 
-                            variable = "hscp2019")
-
-
+HSCP2019_pop_est <- geo_pop(filepath = "HSCP2019_pop_est", variable = "hscp2019")
 
 ### 4 - Tidy Council Area Data ----
-
 # Rename ca2019 as CA
 # Attach Scotland national code
 # Create qualifier column for CA and  set it to "r" for revised CA codes
@@ -128,13 +113,9 @@ CA2019_pop_est %<>%
   select(Year, CA, CAQF, Sex, SexQF, AllAges, Age0:Age90plus)
 
 # Write as csv
-
 fwrite(CA2019_pop_est, glue("{od_filepath}/CA2019_pop_est_{date}.csv"), na = "")
 
-
-
 ### 5 - Tidy Health Board Data ----
-
 # Rename hb2019 to HB
 # Attach Scotland national code
 # Create qualifier column for HB and  set it to "r" for revised HB codes
@@ -148,13 +129,10 @@ HB2019_pop_est %<>%
   select(Year, HB, HBQF, Sex, SexQF, AllAges, Age0:Age90plus)
 
 # Write as csv
-
 fwrite(HB2019_pop_est, glue("{od_filepath}/HB2019_pop_est_{date}.csv"), na = "")
 
 
-
 ### 6 - Tidy HSCP Data ----
-
 # Rename hscp2019 to HSCP
 # Attach Scotland national code
 # Create qualifier column for HSCP and  set it to "r" for revised 
@@ -168,7 +146,4 @@ HSCP2019_pop_est %<>%
   select(Year, HSCP, HSCPQF, Sex, SexQF, AllAges, Age0:Age90plus)
 
 # Write as csv
-
-fwrite(HSCP2019_pop_est, 
-       glue("{od_filepath}/HSCP2019_pop_est_{date}.csv"), na = "")
-
+fwrite(HSCP2019_pop_est,  glue("{od_filepath}/HSCP2019_pop_est_{date}.csv"), na = "")

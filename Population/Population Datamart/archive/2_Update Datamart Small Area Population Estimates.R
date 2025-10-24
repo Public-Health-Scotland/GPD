@@ -3,88 +3,57 @@
 # Original Author - Calum Purdie
 # Original date 31/10/2019
 # Latest update author - Calum Purdie
-# Latest update date - 04/01/2021
+# Latest update date - 02/09/2020
 # Latest update description - formatting code
 # Type of script - Update
 # Written/run on RStudio Desktop
 # Version of R that the script was most recently run on - 3.5.1
 # Code for updating small area population estimates in the Populations Datamart
 # Approximate run time - 30 minutes
-
-# Also read section 8 of the SOP for information on edits to functions that are 
-# required.
-
-# Last edited 03/04/2023 - Gerald Leung
 ##########################################################
 
 ### 1 - Housekeeping ----
 
-# Set filepaths
-
-rm(list = ls())
-
-if(is.na(utils::packageDate("pacman"))) install.packages("pacman")
-if (!pacman::p_isinstalled("friendlyloader")){pacman::p_install_gh("RosalynLP/friendlyloader")}
-
-pacman::p_load(phsmethods, phsopendata,data.table,here, xfun,
-               magrittr,tidyr, readr, janitor,tidylog, glue, dplyr)
-
+library(magrittr)
+library(tidyr)
+library(dplyr)
+library(tidylog)
+library(readr)
+library(glue)
+library(xfun)
 
 # Set filepaths
 
-path_main_script_location = dirname(rstudioapi::getActiveDocumentContext()$path)
-
-setwd(path_main_script_location)
-base_filepath      <- glue("//data/geography/Population")
-lookups_filepath   <- glue("{base_filepath}/Small Area Population estimates/", 
-                           "Lookup Files/R Files")
-
-datamart_filepath  <- glue("{base_filepath}/Population Datamart/Lookup Files/", 
-                           "Other Geographies")
-
-# keep templates in this folder, so doesn't get uploaded to GitHub
-templates_filepath <- "//data/geography/GitHub/GPD-Population/Population Datamart/R Templates"
+base_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
+                      "2_Population")
+lookups_filepath <- glue("{base_filepath}/Small Area Population estimates/", 
+                         "Lookup Files/R Files")
+templates_filepath <- glue("{base_filepath}/Population Datamart/", 
+                           "Creation of Files/Templates/R Templates")
+datamart_filepath <- glue("{base_filepath}/Population Datamart/Lookup Files/", 
+                          "Other Geographies")
 
 # Set date for filenames
+
 date <- strftime(Sys.Date(), format = "%Y%m%d")
 
 # Get CHP2012 column for matching
 
-DZ_CHP <- read_csv(paste0("//conf/linkage/output/lookups/Unicode/Geography/DataZone2011/DataZone2011.csv")) %>% 
-  select(Data_Zone = DataZone2011, 
+DZ_CHP <- read_csv(paste0("//Isdsf00d03/cl-out/lookups/Unicode/Geography/", 
+                          "DataZone2011/DataZone2011.csv")) %>% 
+  select(DataZone2011, CHP2012) %>% 
+  rename(Data_Zone = DataZone2011, 
          CHP_Code = CHP2012)
-
-
- geo_codes_id <- "395476ab-0720-4740-be07-ff4467141352"
-# 
-
-codes <- get_resource(res_id = geo_codes_id) %>%
-  select(DataZone, IntZone, CA, HSCP, HB) %>%
-  rename(datazone2011 = DataZone, intzone2011 = IntZone,
-         ca2019 = CA, hscp2019 = HSCP, hb2019 = HB) %>%
-  as_tibble()
+  
 
 
 ### 2 - Create Function for Outputs ----
 
-datamart_output <- function(start, end, pop_name, file, file_name, template, 
-                            dz, iz, hb, ca, hscp){
+datamart_output <- function(start, end, pop_name, file, file_name, template){
   
   for (i in start:end){
     
     # Get most recent population estimates file
-    
-    data <- readRDS(glue("{lookups_filepath}/{file}"))
-    
-    # If file uses 2001-2010 estimates file match on geography codes lookup
-    
-    if (file == "DataZone2011_pop_est_2001_2010.rds"){
-      
-      data %<>%
-        left_join(codes)
-      
-    }
-      
     # Filter for required year
     # Gather data into correct format
     # Remove the age prefix from all age names
@@ -93,7 +62,7 @@ datamart_output <- function(start, end, pop_name, file, file_name, template,
     # Create blank columns to fit datamart structure
     # Reorder columns
     
-    data %<>% 
+    data <- readRDS(glue("{lookups_filepath}/{file}")) %>% 
       filter(year == i) %>% 
       gather(Age_Band, Population, "age0":"age90plus") %>% 
       mutate(Age_Band = gsub("age", "", Age_Band), 
@@ -101,11 +70,11 @@ datamart_output <- function(start, end, pop_name, file, file_name, template,
              sex = recode(sex, "M" = "1", "F" = "2")) %>% 
       rename(Year = year, 
              Gender = sex, 
-             Data_Zone = !!as.name(dz), 
-             Intermediate_Zone = !!as.name(iz), 
-             NHS_Board_Code_9 = !!as.name(hb), 
-             Council_Area_9 = !!as.name(ca),
-             HSCP_Code = !!as.name(hscp)) %>% 
+             Data_Zone = datazone2011, 
+             Intermediate_Zone = intzone2011, 
+             NHS_Board_Code_9 = hb2014, 
+             Council_Area_9 = ca2011,
+             HSCP_Code = hscp2016) %>% 
       left_join(DZ_CHP) %>% 
       mutate(Population_Name = pop_name, 
              Location_Code = "", 
@@ -138,13 +107,13 @@ datamart_output <- function(start, end, pop_name, file, file_name, template,
               glue("{datamart_filepath}/POPULATION_{file_name}_{i}_{date}.csv"),
               col_names = F)
     
-    }
+  }
   
   # Due to the format of the datamart files, we need to manually remove several
   # commas from the first line of each csv file
   # Use this loop below to remove these commas from each file
   # As this resaves the csv file, this section can take a long time to run
-
+  
   gsub_dir(dir = datamart_filepath, pattern = "1269632,,,,,,,",
            replacement = "1269632", recursive = FALSE, ext = "csv")
   
@@ -153,10 +122,8 @@ datamart_output <- function(start, end, pop_name, file, file_name, template,
 
 ### 3 - Data Zone ----
 
-datamart_output(start = "2011", end = "2021", 
+datamart_output(start = "2019", end = "2019", 
                 pop_name = "Data Zone 2011 Population Estimates", 
-                file = "DataZone2011_pop_est_2011_2022.rds", 
+                file = "DataZone2011_pop_est_2011_2019.rds", 
                 file_name = "DATAZONE2011_ESTIMATES", 
-                template = "Template_DZ2011_estimates.rds", 
-                dz = "datazone2011", iz = "intzone2011", hb = "hb2019", 
-                ca = "ca2019", hscp = "hscp2019")
+                template = "Template_DZ2011_estimates.rds")

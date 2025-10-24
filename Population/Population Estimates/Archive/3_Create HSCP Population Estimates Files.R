@@ -1,17 +1,21 @@
 ##########################################################
 # Create HSCP Population Estimates Files
-# Tina Fu
+# Originally written by Tina Fu
+# Updated by Calum Purdie, Iain MacKinnon
 # Original date - 05/03/2018
 # Data release - Mid-year HSCP Population Estimates
-# Latest update author - Calum Purdie
-# Latest update date - 01/05/2020
+# Latest update author - Gerald Leung
+# Latest update date - 26/03/2024
 # Latest update description - 2019 estimates
 # Type of script - Creation
 # Written/run on RStudio Desktop
-# Version of R that the script was most recently run on - 3.5.1
+# Version of R that the script was most recently run on - 4.0.2
 # Code for creating HSCP population estimates files based on mid-year 
 # estimates released by NRS
 # Approximate run time - 3 minutes
+
+# updated 09/03/2023 by Gerald Leung
+# Fixed fwrite not loading and typo at the end of the script
 ##########################################################
 
 ### 1 - Housekeeping ----
@@ -28,26 +32,37 @@ library(glue)
 library(janitor)
 library(stringr)
 library(ckanr)
+library(haven)
+library(data.table)
+library (phsopendata)
 
 # Set filepaths
 
-filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
-                 "2_Population/Population Estimates")
+filepath <- glue("/data/geography",
+                 "/Population/Population Estimates")
+#filepath <- glue("/data/geography", 
+#                "/Population/Population Estimates") # if on Posit
 data_filepath <- glue("{filepath}/Source Data")
 output_filepath <- glue("{filepath}/Lookup Files/R Files")
 
 # Set estimates year
 
 start <- "1981"
-prev <- "2018"
-new <- "2019"
+prev <- "2023"
+new <- "2024"
 
 # Open Data resources
 
-ckan <- src_ckan("https://www.opendata.nhs.scot")
-ca2011_id <- "967937c4-8d67-4f39-974f-fd58c4acfda5"
-ca2018_id <- "294478b7-3d67-44f6-a462-721d8d2c44dd"
-ca2019_id <- "2dab0c9d-09be-4266-97f8-4f83e78db85f"
+#ckan <- src_ckan("https://www.opendata.nhs.scot")
+ca_id <- "967937c4-8d67-4f39-974f-fd58c4acfda5"
+# ca2018_id <- "294478b7-3d67-44f6-a462-721d8d2c44dd"
+# ca2019_id <- "2dab0c9d-09be-4266-97f8-4f83e78db85f"
+
+
+##To install phsopendata:
+## install.packages('phsopendata', type = 'source')
+
+hb2019_id<-"652ff726-e676-4a20-abda-435b98dd7bdc"
 
 
 
@@ -61,21 +76,20 @@ CA2019_pop_est_5y <- readRDS(
 
 # Get HSCP columns from open data resources
 
-hscp2016_lookup <- dplyr::tbl(src = ckan$con, from = ca2011_id) %>% 
-  select(CA, HSCP) %>% 
-  rename(ca2011 = CA, hscp2016 = HSCP) %>%  
-  as_tibble()
+hscp_lookup<- get_resource(res_id = ca_id) %>%
+   as_tibble() %>%
+  select(CA, HSCP, HSCPName) 
 
-hscp2018_lookup <- dplyr::tbl(src = ckan$con, from = ca2018_id) %>% 
-  select(CA, HSCP) %>% 
-  rename(ca2018 = CA, hscp2018 = HSCP) %>%  
-  as_tibble()
-
-hscp2019_lookup <- dplyr::tbl(src = ckan$con, from = ca2019_id) %>% 
-  select(CA, CAName, HSCP, HSCPName) %>% 
-  rename(ca2019 = CA, ca2019name = CAName, hscp2019 = HSCP, 
-         hscp2019name = HSCPName) %>%  
-  as_tibble()
+# hscp2018_lookup <- dplyr::tbl(src = ckan$con, from = ca2018_id) %>% 
+#   select(CA, HSCP) %>% 
+#   rename(ca2018 = CA, hscp2018 = HSCP) %>%  
+#   as_tibble()
+# 
+# hscp2019_lookup <- dplyr::tbl(src = ckan$con, from = ca2019_id) %>% 
+#   select(CA, HSCP, HSCPName) %>% 
+#   rename(ca2019 = CA, ca2019name = CAName, hscp2019 = HSCP, 
+#          hscp2019name = HSCPName) %>%  
+#   as_tibble()
 
 
 
@@ -92,9 +106,19 @@ hscp2019_lookup <- dplyr::tbl(src = ckan$con, from = ca2019_id) %>%
 # Arrange by year, hscp2019, age and sex to get the required format
 
 HSCP2019_pop_est <- CA2019_pop_est %>%
-  left_join(hscp2016_lookup) %>%
-  left_join(hscp2018_lookup) %>%
-  left_join(hscp2019_lookup) %>%
+  left_join(hscp_lookup %>% 
+              select(hscp2016 = HSCP, 
+                     ca2011 = CA)) %>% 
+  distinct() %>% 
+  left_join(hscp_lookup %>% 
+              select(hscp2018 = HSCP, 
+                     ca2018 = CA)) %>% 
+  distinct() %>%   
+  left_join(hscp_lookup %>% 
+              select(hscp2019 = HSCP, 
+                     hscp2019name = HSCPName, 
+                     ca2019 = CA)) %>% 
+  distinct() %>%     
   select(year, hscp2019, hscp2019name, hscp2018, hscp2016, age, sex, sex_name, 
          pop) %>%
   group_by(year, hscp2019, hscp2019name, hscp2018, hscp2016, age, sex, 
@@ -102,13 +126,6 @@ HSCP2019_pop_est <- CA2019_pop_est %>%
   summarise(pop = sum(pop)) %>%
   ungroup() %>%
   arrange(year, hscp2019, age, sex)
-
-
-# Save file as .RDS
-
-saveRDS(HSCP2019_pop_est, 
-        glue("{output_filepath}/HSCP2019_pop_est_{start}_{new}.rds"))
-
 
 
 ### 4 - Create the HSCP 5 year age group population estimate file ----
@@ -124,9 +141,19 @@ saveRDS(HSCP2019_pop_est,
 # Arrange by year, hscp2019, age_group and sex to get the required format
 
 HSCP2019_pop_est_5y <- CA2019_pop_est_5y %>%
-  left_join(hscp2016_lookup) %>%
-  left_join(hscp2018_lookup) %>%
-  left_join(hscp2019_lookup) %>%
+  left_join(hscp_lookup %>% 
+              select(hscp2016 = HSCP, 
+                     ca2011 = CA)) %>% 
+  distinct() %>% 
+  left_join(hscp_lookup %>% 
+              select(hscp2018 = HSCP, 
+                     ca2018 = CA)) %>% 
+  distinct() %>%   
+  left_join(hscp_lookup %>% 
+              select(hscp2019 = HSCP, 
+                     hscp2019name = HSCPName, 
+                     ca2019 = CA)) %>% 
+  distinct() %>%     
   select(year, hscp2019, hscp2019name, hscp2018, hscp2016, age_group, 
          age_group_name, sex, sex_name, pop) %>%
   group_by(year, hscp2019, hscp2019name, hscp2018, hscp2016, age_group, 
@@ -134,14 +161,6 @@ HSCP2019_pop_est_5y <- CA2019_pop_est_5y %>%
   summarise(pop = sum(pop)) %>%
   ungroup() %>%
   arrange(year, hscp2019, age_group, sex)
-
-# Save file as .RDS
-
-saveRDS(HSCP2019_pop_est_5y, 
-        glue("{output_filepath}/", 
-             "HSCP2019_pop_est_5year_agegroups_{start}_{new}.rds"))
-
-
 
 ### 5 - Check files ----
 
@@ -209,8 +228,57 @@ checks <- function(input){
 ### 5.2 - Check single age file ----
 
 checks(input = HSCP2019_pop_est)
-
+#1) inital output table is number of single year records  91 * number of HSCP (31) * number of gender = 5642
+#2) second output is number of single year records (total rows) divided by number of hscp2019 (31). This will increase year on year as a new years data is added.
+# For 2022, 236964/31 = 7644. Similarly for #3-#5 below.
+#3) third output is number of single year records divided by  hscp2018 (31). This will increase year on year as a new years data is added.
+#4) fourth count is by hscp2016 (31) as above
+#5) fifth is by (hscp2019name) name 
+#6) single year ages divided by total number of records (i.e. rows/91).
+# For 2022, 236964/31 = 2604.
+#7) grouped into gender therefore total records divided by 2 as each gender has equal number of records.
+# For 2022, 236964/2 = 118482.
 
 ### 5.3 - Check 5 year age group file ----
 
 checks(input = HSCP2019_pop_est_5y)
+
+#1) inital output table is total number of rows/total number of years
+# For 2022, 52080/42 = 1240 (42 years from 1981-2022)
+#2) second output is total number of rows divided by number of hscp2019 (31). This will increase year on year as a new years data is added.
+# For 2022, 52080/31 = 1680. Similarly for #3-#5 below.
+#3) third output is total number of rows divided by  hscp2018 (31). This will increase year on year as a new years data is added.
+#4) fourth count is by hscp2016 (31) as above
+#5) fifth is by (hscp2019name) name 
+#6) Total number of rows divided by total number of age groups (20) (i.e. rows/20).
+# For 2022, 52080/20 = 2604.
+#7) grouped into gender therefore total records divided by 2 as each gender has equal number of records.
+# For 2022, 52080/2 = 26040.
+
+#### 6.0 Export ####
+#### 6.1 single year #####
+saveRDS(HSCP2019_pop_est, 
+        glue("{output_filepath}/HSCP2019_pop_est_{start}_{new}.rds"))
+
+#write_sav(HSCP2019_pop_est, 
+          #glue("{output_filepath}/HSCP2019_pop_est_{start}_{new}.sav"))#
+#write_csv FILE
+fwrite(HSCP2019_pop_est, 
+       glue("{output_filepath}/HSCP2019_pop_est_{start}_{new}.csv",
+            na=""))
+#### 6.2 single year #####
+
+# Save file as .RDS
+
+saveRDS(HSCP2019_pop_est_5y, 
+        glue("{output_filepath}/", 
+             "HSCP2019_pop_est_5year_agegroups_{start}_{new}.rds"))
+
+#write_sav(HSCP2019_pop_est_5y, 
+ #         glue("{output_filepath}/", 
+  #             "HSCP2019_pop_est_5year_agegroups_{start}_{new}.sav"))
+
+#write_csv FILE
+fwrite(HSCP2019_pop_est_5y, 
+       glue("{output_filepath}/HSCP2019_pop_est_5year_agegroups_{start}_{new}.csv",
+            na=""))

@@ -19,42 +19,57 @@
 
 ### 1 - Housekeeping ----
 
+library(magrittr)
+library(tidyr)
+library(dplyr)
+library(tidylog)
+library(readr)
+library(glue)
+library(xfun)
+library(data.table)
+#library(ckanr)
+library(phsopendata)
+
 # Set filepaths
 
-rm(list = ls())
-
-if(is.na(utils::packageDate("pacman"))) install.packages("pacman")
-if (!pacman::p_isinstalled("friendlyloader")){pacman::p_install_gh("RosalynLP/friendlyloader")}
-
-pacman::p_load(phsmethods, phsopendata,data.table,here, xfun,
-               magrittr,tidyr, readr, janitor,tidylog, glue, dplyr)
-
-
-# Set filepaths
-
-path_main_script_location = dirname(rstudioapi::getActiveDocumentContext()$path)
-
-setwd(path_main_script_location)
+# base_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
+#                       "2_Population")
 base_filepath      <- glue("//data/geography/Population")
 lookups_filepath   <- glue("{base_filepath}/Small Area Population estimates/", 
                            "Lookup Files/R Files")
-
+#templates_filepath <- glue("{base_filepath}/Population Datamart/", 
+ #                          "Creation of Files/Templates/R Templates") # Moved
+# templates_filepath <- "F:/PHI/Referencing & Standards/GPD/5_GitHub/GPD/Population/Population Datamart/R Templates"
+templates_filepath <- "//data/geography/GitHub/GPD-Population/Population Datamart/R Templates"
 datamart_filepath  <- glue("{base_filepath}/Population Datamart/Lookup Files/", 
                            "Other Geographies")
-
-# keep templates in this folder, so doesn't get uploaded to GitHub
-templates_filepath <- "//data/geography/GitHub/GPD-Population/Population Datamart/R Templates"
 
 # Set date for filenames
 date <- strftime(Sys.Date(), format = "%Y%m%d")
 
 # Get CHP2012 column for matching
 
+# DZ_CHP <- read_csv(paste0("//Isdsf00d03/cl-out/lookups/Unicode/Geography/", 
+#                           "DataZone2011/DataZone2011.csv")) %>% 
 DZ_CHP <- read_csv(paste0("//conf/linkage/output/lookups/Unicode/Geography/DataZone2011/DataZone2011.csv")) %>% 
   select(Data_Zone = DataZone2011, 
          CHP_Code = CHP2012)
 
+# Use the Geography Codes and Names open data file to get the names
+# First need to run the httr configuration script
+# 
+#source(here::here("Geography", "Scottish Postcode Directory",
+#                  "Set httr configuration for API.R"))
+# source("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/5_GitHub/GPD/Geography/Scottish Postcode Directory/Set httr configuration for API.R")
 
+# source("//data/geography/GitHub/GPD-Geography/SPD/Set httr configuration for API.R")
+
+# Add columns for datazone2011name
+
+# Set url and id
+#switch vpn off for this step
+
+# ckan <- src_ckan("https://www.opendata.nhs.scot")
  geo_codes_id <- "395476ab-0720-4740-be07-ff4467141352"
 # 
 
@@ -64,6 +79,17 @@ codes <- get_resource(res_id = geo_codes_id) %>%
          ca2019 = CA, hscp2019 = HSCP, hb2019 = HB) %>%
   as_tibble()
 
+# codes <- dplyr::tbl(src = ckan$con, from = geo_id) %>%
+#   select(DataZone, IntZone, CA, HSCP, HB) %>%
+#   rename(datazone2011 = DataZone, intzone2011 = IntZone,
+#          ca2019 = CA, hscp2019 = HSCP, hb2019 = HB) %>%
+#   as_tibble()
+
+# codes1 <- read_csv("//data/geography/Population/Small Area Population estimates/Source Data/Geography Codes and Labels.csv") %>% 
+#   select(DataZone, IntZone, CA, HSCP, HB) %>% 
+#   rename(datazone2011 = DataZone, intzone2011 = IntZone, 
+#          ca2019 = CA, hscp2019 = HSCP, hb2019 = HB) %>%  
+#   as_tibble()
 
 ### 2 - Create Function for Outputs ----
 
@@ -138,7 +164,11 @@ datamart_output <- function(start, end, pop_name, file, file_name, template,
               glue("{datamart_filepath}/POPULATION_{file_name}_{i}_{date}.csv"),
               col_names = F)
     
-    }
+    # fwrite(output,
+    #           glue("{datamart_filepath}/POPULATION_{file_name}_{i}_{date}.csv"),
+    #           col.names = F)
+    
+  }
   
   # Due to the format of the datamart files, we need to manually remove several
   # commas from the first line of each csv file
@@ -153,10 +183,25 @@ datamart_output <- function(start, end, pop_name, file, file_name, template,
 
 ### 3 - Data Zone ----
 
-datamart_output(start = "2011", end = "2021", 
+# datamart_output(start = "2006", end = "2010", 
+#                 pop_name = "Data Zone 2011 Population Estimates", 
+#                 file = "DataZone2011_pop_est_2001_2010.rds", 
+#                 file_name = "DATAZONE2011_ESTIMATES", 
+#                 template = "Template_DZ2011_estimates.rds", 
+#                 dz = "datazone2011", iz = "intzone2011", hb = "hb2019", 
+#                 ca = "ca2019", hscp = "hscp2019")
+
+datamart_output(start = "2022", end = "2022", 
                 pop_name = "Data Zone 2011 Population Estimates", 
-                file = "DataZone2011_pop_est_2011_2022.rds", 
-                file_name = "DATAZONE2011_ESTIMATES", 
+                file = "DataZone2011_pop_est_2011_2022_REBASED.rds", 
+                file_name = "DATAZONE2011_ESTIMATES_Rebased_version", 
                 template = "Template_DZ2011_estimates.rds", 
                 dz = "datazone2011", iz = "intzone2011", hb = "hb2019", 
                 ca = "ca2019", hscp = "hscp2019")
+# datamart_output(start = "2001", end = "2014", 
+#                 pop_name = "Data Zone 2001 Population Estimates", 
+#                 file = "DataZone2011_pop_est_2001_2014.rds", 
+#                 file_name = "DATAZONE2011_ESTIMATES", 
+#                 template = "Template_DZ2001_estimates.rds", 
+#                 dz = "datazone2001", iz = "intzone2001", hb = "hb2019", 
+#                 ca = "ca2019", hscp = "hscp2019")
