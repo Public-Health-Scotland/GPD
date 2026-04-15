@@ -56,11 +56,16 @@ date <- strftime(Sys.Date(), format = "%Y%m%d")
 DZ_CHP <- read_csv(paste0("//conf/linkage/output/lookups/Unicode/Geography/DataZone2011/DataZone2011.csv")) %>% 
   select(Data_Zone = DataZone2011, 
          CHP_Code = CHP2012)
-DZ_CHP_2022 <- readRDS(paste0("//conf/linkage/output/lookups/Unicode/Geography/Scottish Postcode Directory/Scottish_Postcode_Directory_2025_2.rds"))
+spd <- readRDS(paste0("//conf/linkage/output/lookups/Unicode/Geography/Scottish Postcode Directory/Scottish_Postcode_Directory_2025_2.rds"))
 
+codes_2022 <- spd %>% 
+  select(datazone2022, intzone2022, ca2019, hscp2019, hb2019, chp_2012) %>% 
+  distinct(datazone2022, .keep_all =TRUE)
+  
  geo_codes_id <- "395476ab-0720-4740-be07-ff4467141352"
 # 
 
+codes_2022 <- spd %>% 
 codes <- get_resource(res_id = geo_codes_id) %>%
   select(DataZone, IntZone, CA, HSCP, HB) %>%
   rename(datazone2011 = DataZone, intzone2011 = IntZone,
@@ -68,6 +73,7 @@ codes <- get_resource(res_id = geo_codes_id) %>%
   as_tibble()
 
 
+data <- readRDS(glue("{lookups_filepath}/", "DataZone2011_pop_est_2011_2024.rds"))
 
 ### 2 - Create Function for Outputs ----
 
@@ -97,12 +103,17 @@ datamart_output <- function(start, end, pop_name, file, file_name, template,
     # Create blank columns to fit datamart structure
     # Reorder columns
     
-    data %<>%
-      filter(year == i) %>%
-      gather(Age_Band, Population, "age0":"age90plus") %>%
+    
+    data <-data  %>% 
+      filter(year == 2016) %>%
+      pivot_longer(cols = age0:age90plus,
+                   names_to = "Age_Band",
+                   values_to = "Population") %>% 
+      # gather(Age_Band, Population, "age0":"age90plus") %>%
       mutate(Age_Band = gsub("age", "", Age_Band),
-             Age_Band = recode(Age_Band, "90plus" = "90"),
-             sex = recode(sex, "M" = "1", "F" = "2")) %>%
+             Age_Band = case_when(Age_Band == "90plus" ~ "90", TRUE~ Age_Band),
+             sex = recode(sex, "M" = "1", "F" = "2")
+             ) %>% 
       rename(Year = year,
              Gender = sex,
              Data_Zone = !!as.name(dz),
@@ -110,15 +121,16 @@ datamart_output <- function(start, end, pop_name, file, file_name, template,
              NHS_Board_Code_9 = !!as.name(hb),
              Council_Area_9 = !!as.name(ca),
              HSCP_Code = !!as.name(hscp)) %>%
-      left_join(DZ_CHP) %>%
+     # left_join(DZ_CHP) %>%
       mutate(Population_Name = pop_name,
              Location_Code = "",
              Location_Type = "",
              Month = "") %>%
       select(Population_Name, Population, Age_Band, Gender, Location_Code,
              Location_Type, Data_Zone, Intermediate_Zone, Council_Area_9,
-             NHS_Board_Code_9, Month, CHP_Code, HSCP_Code, Year) %>%
-      mutate_if(is.numeric, as.character) %>%
+             NHS_Board_Code_9, Month, CHP_Code, HSCP_Code, Year = year) %>%
+     # mutate_if(is.numeric, as.character) %>%
+      mutate(across(where(is.numeric), as.character)) %>% 
       arrange(Data_Zone)
     
     # Read in correct template
@@ -157,7 +169,7 @@ datamart_output <- function(start, end, pop_name, file, file_name, template,
 ### 3 - Data Zone ----
 
 datamart_output(start = "2016", end = "2016", 
-                pop_name = "Data Zone 2011 Population Estimates", 
+                pop_name = "Data Zone 2022 Population Estimates", 
                 file = "DataZone2011_pop_est_2011_2024.rds", 
                 file_name = "DATAZONE2011_ESTIMATES", 
                 template = "Template_DZ2011_estimates.rds", 

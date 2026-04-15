@@ -39,14 +39,14 @@ date <- strftime(Sys.Date(), format = "%d%m%Y")
 
 # Set new year
 
-year <- 2022
+year <- 2024
 
 # Set datasets to use
 
-new_dz_estimates       <- glue("DataZone2011_pop_est_2011_{year}_REBASED")
-new_dz_estimates_5y    <- glue("DataZone2011_pop_est_5year_agegroups_2011_{year}_REBASED")
-new_iz_estimates       <- glue("IntZone2011_pop_est_2011_{year}_REBASED")
-new_iz_estimates_5y    <- glue("IntZone2011_pop_est_5year_agegroups_2011_{year}_REBASED")
+new_dz_estimates       <- glue("DataZone2011_pop_est_2011_{year}")
+new_dz_estimates_5y    <- glue("DataZone2011_pop_est_5year_agegroups_2011_{year}")
+new_iz_estimates       <- glue("IntZone2011_pop_est_2011_{year}")
+new_iz_estimates_5y    <- glue("IntZone2011_pop_est_5year_agegroups_2011_{year}")
 dz_estimates_2001_2010 <- "DataZone2011_pop_est_2001_2010"
 iz_estimates_2001_2010 <- "IntZone2011_pop_est_2001_2010"
 
@@ -64,7 +64,7 @@ dz2011_pop_est <- readRDS(glue("{lookup_filepath}/{new_dz_estimates}.rds")) %>%
 # Need to add in the rebased 2001 - 2010 dz estimates for the open data file
 # It was agreed to keep all estimates in one open data file for consistency
 
-dz2011_pop_est_2001_2010 <- readRDS(glue("{lookup_filepath}/", 
+dz2011_pop_est_2001_2010 <- readRDS(glue("{lookup_filepath}/Archive/", 
                                          "{dz_estimates_2001_2010}.rds")) %>% 
   select(-c(datazone2011name))
 
@@ -125,7 +125,7 @@ dz2011_pop_est_od %<>%
 
 # Save as csv
 
-fwrite(dz2011_pop_est_od, glue("{od_filepath}/DZ2011-pop-est_REBASED_{date}.csv"), 
+fwrite(dz2011_pop_est_od, glue("{od_filepath}/DZ2011-pop-est_{date}.csv"), 
        na = "")
 
 
@@ -142,7 +142,7 @@ iz2011_pop_est <- readRDS(glue("{lookup_filepath}/{new_iz_estimates}.rds")) %>%
 # Need to add in the rebased 2001 - 2010 iz estimates for the open data file
 # It was agreed to keep all estimates in one open data file for consistency
 
-iz2011_pop_est_2001_2010 <- readRDS(glue("{lookup_filepath}/", 
+iz2011_pop_est_2001_2010 <- readRDS(glue("{lookup_filepath}/Archive/", 
                                          "{iz_estimates_2001_2010}.rds")) %>% 
   select(-intzone2011name)
 
@@ -204,5 +204,5 @@ iz2011_pop_est_OD %<>%
 
 # Save as csv
 
-fwrite(iz2011_pop_est_OD, glue("{od_filepath}/IZ2011-pop-est_REBASED_{date}.csv"), 
+fwrite(iz2011_pop_est_OD, glue("{od_filepath}/IZ2011-pop-est_{date}.csv"), 
        na = "")
