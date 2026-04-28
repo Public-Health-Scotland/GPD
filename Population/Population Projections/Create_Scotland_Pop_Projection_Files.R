@@ -16,8 +16,8 @@ pacman::p_load(phsmethods,
                magrittr,tidyr,readxl, readr, janitor,tidylog, glue, stringr, dplyr,data.table, arrow)
 
 # set projection start & end dates 
-start <- "2022" #update
-end <- "2047" #update
+start <- "2024" #update
+end <- "2049" #update
 
 # Getting main script location for working directory
 path_main_script_location = dirname(rstudioapi::getActiveDocumentContext()$path)
@@ -31,6 +31,17 @@ data_filepath <- glue("{base_filepath}/Source Data")
 
 # set scottish population projection data filepath and name. Update as required.
 scot_pop_data_path <- glue("{data_filepath}/scot_pop_proj_{start}_{end}.xlsx")
+
+
+# for geog codes
+gpd_base_path<-"/conf/linkage/output/lookups/Unicode/"
+geog_lookup_path <-  glue(gpd_base_path, "Geography/HSCP Locality/")
+
+# set files to use #
+
+# set scottish population projection data filepath and name. Update as required.
+source_data_table <- glue(data_filepath, start, "-based-snpp-data-tables.xlsx")
+
 
 #   Set functions #
 source ("pop_proj_functions.R")
