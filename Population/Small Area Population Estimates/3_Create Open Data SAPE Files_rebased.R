@@ -15,26 +15,23 @@
 
 
 ### 1 - Housekeeping ----
+rm(list = ls())
 
+#### libaries 
+if(is.na(utils::packageDate("pacman"))) install.packages("pacman")
+if (!pacman::p_isinstalled("friendlyloader")){pacman::p_install_gh("RosalynLP/friendlyloader")}
 # Read in packages from library
 
-library(magrittr)
-library(dplyr)
-library(data.table)
-library(tidylog)
-library(janitor)
-library(glue)
+pacman::p_load( glue, janitor, tidylog, data.table, magrittr,
+               dplyr, arrow)
+
 
 # Set filepaths
 
-# lookup_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
-#                         "/2_Population/Small Area Population estimates/", 
-#                         "Lookup Files/R Files")
-lookup_filepath <- glue("//data/geography/Population/Small Area Population estimates/Lookup Files/R Files")
-od_filepath     <- glue("//data/geography/Population/Small Area Population estimates/Lookup Files/CKAN Open Data")
-# od_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Publications/", 
-#                     "Open Data (Non Health Topic)/Data/", 
-#                     "OD1700007 - Population Estimates")
+
+lookup_filepath <- "//data/geography/Population/Small Area Population estimates/Lookup Files/R Files"
+od_filepath     <- "//data/geography/Population/Small Area Population estimates/Lookup Files/CKAN Open Data"
+
 
 # Set date for open data filenames
 
@@ -42,7 +39,7 @@ date <- strftime(Sys.Date(), format = "%d%m%Y")
 
 # Set new year
 
-year <- 2022
+year <- 2024
 
 # Set datasets to use
 
@@ -67,7 +64,7 @@ dz2011_pop_est <- readRDS(glue("{lookup_filepath}/{new_dz_estimates}.rds")) %>%
 # Need to add in the rebased 2001 - 2010 dz estimates for the open data file
 # It was agreed to keep all estimates in one open data file for consistency
 
-dz2011_pop_est_2001_2010 <- readRDS(glue("{lookup_filepath}/", 
+dz2011_pop_est_2001_2010 <- readRDS(glue("{lookup_filepath}/Archive/", 
                                          "{dz_estimates_2001_2010}.rds")) %>% 
   select(-c(datazone2011name))
 
@@ -145,7 +142,7 @@ iz2011_pop_est <- readRDS(glue("{lookup_filepath}/{new_iz_estimates}.rds")) %>%
 # Need to add in the rebased 2001 - 2010 iz estimates for the open data file
 # It was agreed to keep all estimates in one open data file for consistency
 
-iz2011_pop_est_2001_2010 <- readRDS(glue("{lookup_filepath}/", 
+iz2011_pop_est_2001_2010 <- readRDS(glue("{lookup_filepath}/Archive/", 
                                          "{iz_estimates_2001_2010}.rds")) %>% 
   select(-intzone2011name)
 

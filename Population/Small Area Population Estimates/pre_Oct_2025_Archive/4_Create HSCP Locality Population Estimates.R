@@ -31,13 +31,11 @@ library(janitor)
 
 # Set filepaths
 
-# base_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", "Referencing & Standards", "GPD", 
-#                            "2_Population", "Small Area Population estimates", "Lookup Files", 
-#                            "R Files")
-base_filepath <- file.path("//data", "geography", "PHIBCS", "PHI", "Referencing & Standards", "GPD", 
-                           "Population", "Small Area Population estimates", "Lookup Files", "R Files")
-# lookups_filepath <- file.path("//Isdsf00d03", "cl-out", "lookups", "Unicode")
-lookups_filepath <- file.path("//conf/linkage/output/lookups/Unicode")
+base_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", "Referencing & Standards", "GPD", 
+                           "2_Population", "Small Area Population estimates", "Lookup Files", 
+                           "R Files")
+
+lookups_filepath <- file.path("//Isdsf00d03", "cl-out", "lookups", "Unicode")
 
 open_data_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", "Publications", 
                                 "Open Data (Non Health Topic)", "Data", "OD1700007 - Population Estimates")
@@ -45,16 +43,15 @@ open_data_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", "Publicatio
 ### 2 - Read in Files ----
 
 # Read in the most recent Data Zone population estimates
-# iM this is well out of date
-DZ2011_pop_est <- readRDS(file.path(base_filepath, "DataZone2011_pop_est_2011_2021.rds"))
+
+DZ2011_pop_est <- readRDS(file.path(base_filepath, "DataZone2011_pop_est_2011_2018.rds"))
 
 # Read in the HSCP Locality file for matching
 # Select relevant columns and tidy up names for matching
-#IM changed to 20220630 version
-Localities <- readRDS(file.path(lookups_filepath, "Geography", "HSCP Locality", "HSCP Localities_DZ11_Lookup_20220630.rds")) %>% 
-  select(datazone2011, hscp_locality) #%>% 
-  #clean_names() %>% 
-#  rename(datazone2011 = data_zone2011)
+Localities <- readRDS(file.path(lookups_filepath, "Geography", "HSCP Locality", "HSCP Localities_DZ11_Lookup_20180903.rds")) %>% 
+  select(DataZone2011, HSCPLocality) %>% 
+  clean_names() %>% 
+  rename(datazone2011 = data_zone2011)
 
 
 ### 3 - Create Locality Single Year Estimates ----
@@ -99,6 +96,11 @@ Locality_pop_est_5y <- Locality_pop_est %>%
   select(-c(age0:age89)) %>% 
   rename(ageg90plus = age90plus) %>% 
   select(year, hscp_locality, sex, ageg04:ageg8589, ageg90plus, total_pop)
+
+# Save file as .RDS
+
+saveRDS(Locality_pop_est_5y, file.path(base_filepath, "Locality_pop_est_5year_agegroups_2011_2018.rds"))
+
 
 
 ### 5 - Check Final Files ----
@@ -173,8 +175,3 @@ Locality_5y_total <- Locality_pop_est_5y %>%
 
 Locality_total %>%
   full_join(Locality_5y_total)
-
-##### 6.0  Save file as .RDS####
-
-saveRDS(Locality_pop_est_5y, file.path(base_filepath, "Locality_pop_est_5year_agegroups_2011_2018.rds"))
-

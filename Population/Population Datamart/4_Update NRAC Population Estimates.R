@@ -99,16 +99,16 @@ dz_pop_model %<>%
 # This section will not be necessary once the Populations datamart has been 
 # updated to include the new GSS codes.
 
-dz_pop_model %<>%
-  mutate(Council_Area_9 = recode(Council_Area_9, 
-                                 "S12000047" = "S12000015", 
-                                 "S12000048" = "S12000024"), 
-         HSCP_Code = recode(HSCP_Code, 
-                            "S37000032" = "S37000014", 
-                            "S37000033" = "S37000023"), 
-         NHS_Board_Code_9 = recode(NHS_Board_Code_9, 
-                                   "S08000029" = "S08000018", 
-                                   "S08000030" = "S08000027"))
+# dz_pop_model %<>%
+#   mutate(Council_Area_9 = recode(Council_Area_9, 
+#                                  "S12000047" = "S12000015", 
+#                                  "S12000048" = "S12000024"), 
+#          HSCP_Code = recode(HSCP_Code, 
+#                             "S37000032" = "S37000014", 
+#                             "S37000033" = "S37000023"), 
+#          NHS_Board_Code_9 = recode(NHS_Board_Code_9, 
+#                                    "S08000029" = "S08000018", 
+#                                    "S08000030" = "S08000027"))
 
 
 # Create population name from caregrp column
@@ -261,16 +261,16 @@ gp_pop_model %<>%
 # This section will not be necessary once the Populations datamart has been 
 # updated to include the new GSS codes.
 
-gp_pop_model %<>%
-  mutate(Council_Area_9 = recode(Council_Area_9, 
-                                 "S12000047" = "S12000015", 
-                                 "S12000048" = "S12000024"), 
-         HSCP_Code = recode(HSCP_Code, 
-                            "S37000032" = "S37000014", 
-                            "S37000033" = "S37000023"), 
-         NHS_Board_Code_9 = recode(NHS_Board_Code_9, 
-                                   "S08000029" = "S08000018", 
-                                   "S08000030" = "S08000027"))
+# gp_pop_model %<>%
+#   mutate(Council_Area_9 = recode(Council_Area_9, 
+#                                  "S12000047" = "S12000015", 
+#                                  "S12000048" = "S12000024"), 
+#          HSCP_Code = recode(HSCP_Code, 
+#                             "S37000032" = "S37000014", 
+#                             "S37000033" = "S37000023"), 
+#          NHS_Board_Code_9 = recode(NHS_Board_Code_9, 
+#                                    "S08000029" = "S08000018", 
+#                                    "S08000030" = "S08000027"))
 
 
 # Create population name from caregrp column

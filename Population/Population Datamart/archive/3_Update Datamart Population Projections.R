@@ -10,42 +10,28 @@
 # Version of R that the script was most recently run on - 3.5.1
 # Code for updating population projections in the Populations Datamart.
 # Approximate run time - 30 seconds
-
-# Last updated 20/04/2023 - Gerald Leung
-# Last updated 05/042/2025 - Alan Coventry - added in Stats Drive alternatives - lines 43 to 47
 ##########################################################
 
 ### 1 - Housekeeping ----
 
-rm(list = ls())
-
-if(is.na(utils::packageDate("pacman"))) install.packages("pacman")
-if (!pacman::p_isinstalled("friendlyloader")){pacman::p_install_gh("RosalynLP/friendlyloader")}
-
-pacman::p_load( magrittr,tidyr,readxl, readr, janitor,tidylog, glue, dplyr,xfun)
+library(magrittr)
+library(tidyr)
+library(dplyr)
+library(tidylog)
+library(readr)
+library(glue)
+library(xfun)
 
 # Set filepaths
 
-base_filepath <- ("/data/geography/Population")
-
-
-lookups_filepath <- glue("{base_filepath}/Population Projections/Lookup Files/",
-                         "R Files")
-
-
-templates_filepath <- glue("/data/geography/", 
-                           "GitHub/GPD-Population/Population Datamart/", 
-                           "R Templates")
-
-
-datamart_filepath <- glue("/data/geography/Population/Population Datamart/Lookup Files/", 
-                          "Other Geographies")
-
-
-
-# set Estimate start & end dates 
-start <- "2022" #update
-end <- "2047" #update
+base_filepath <- file.path("//Freddy", "DEPT", "PHIBCS", "PHI", 
+                           "Referencing & Standards", "GPD", "2_Population")
+lookups_filepath <- file.path(base_filepath, "Population Projections", 
+                              "Lookup Files", "R Files")
+templates_filepath <- file.path(base_filepath, "Population Datamart", 
+                                "Creation of Files", "Templates", "R Templates")
+datamart_filepath <- file.path(base_filepath, "Population Datamart", 
+                               "Lookup Files", "Other Geographies")
 
 # Set date for filenames
 
@@ -54,14 +40,7 @@ date <- strftime(Sys.Date(), format = "%Y%m%d")
 
 ### 2 - Create Function for Outputs ----
 
-datamart_output <- function(start, # projection year start, generally only start & end need updating
-                            end, # projection year end
-                            pop_name, # variable in Output Data tables that identifies the geography
-                            file, # name of "cl-out" source file
-                            file_name, # what you wish the output file to start with
-                            template, # template file used
-                            geography) # identifies correct code to add as a variable in Output Data table
-  {
+datamart_output <- function(start, end, pop_name, file, file_name, template){
   
   for (i in start:end){
     
@@ -95,7 +74,7 @@ datamart_output <- function(start, # projection year start, generally only start
     } else if(file_name == "CA_PROJECTIONS"){
       
       data %<>% 
-        rename(Council_Area_9 = !!as.name(geography)) %>% 
+        rename(Council_Area_9 = ca2011) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                NHS_Board_Code_9 = "",
@@ -104,7 +83,7 @@ datamart_output <- function(start, # projection year start, generally only start
     } else if(file_name == "HSCP_PROJECTIONS"){
       
       data %<>% 
-        rename(HSCP_Code = !!as.name(geography)) %>% 
+        rename(HSCP_Code = hscp2016) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                NHS_Board_Code_9 = "",
@@ -113,7 +92,7 @@ datamart_output <- function(start, # projection year start, generally only start
     } else if (file_name == "HBCURRENT_PROJECTIONS"){
       
       data %<>% 
-        rename(NHS_Board_Code_9 = !!as.name(geography)) %>% 
+        rename(NHS_Board_Code_9 = hb2014) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                Council_Area_9 = "",
@@ -186,37 +165,35 @@ datamart_output <- function(start, # projection year start, generally only start
 }
 
 
+
 ### 3 - Scotland ----
-#update years for "start" and "end" plus file_name entry
-datamart_output(start = start, end = end, 
+
+datamart_output(start = "2018", end = "2043", 
                 pop_name = "Scotland Population Projections", 
-                file = "scot_pop_proj_2022_2047.rds", 
+                file = "scot_pop_proj_2018_2043.rds", 
                 file_name = "SCOTLAND_PROJECTIONS", 
                 template = "Template_scot_projections.rds")
 
 ### 4 - Council Area ----
-#update years for "start" and "end" plus file entry
-datamart_output(start = start, end = end, 
+
+datamart_output(start = "2018", end = "2043", 
                 pop_name = "Council Area Population Projections", 
-                file = "CA2019_pop_proj_2022_2047.rds", 
+                file = "CA2019_pop_proj_2018_2043.rds", 
                 file_name = "CA_PROJECTIONS", 
-                template = "Template_CA_projections.rds", 
-                geography = "ca2019")
+                template = "Template_CA_projections.rds")
 
 ### 5 - HSCP ----
-#update years for "start" and "end" plus file entry
-datamart_output(start = start, end = end, 
+
+datamart_output(start = "2018", end = "2043", 
                 pop_name = "Health and Social Care Partnership Population Projections", 
-                file = "HSCP2019_pop_proj_2022_2047.rds", 
+                file = "HSCP2019_pop_proj_2018_2043.rds", 
                 file_name = "HSCP_PROJECTIONS", 
-                template = "Template_HSCP_projections.rds", 
-                geography = "hscp2019")
+                template = "Template_HSCP_projections.rds")
 
 ### 6 - Health Board Current ----
-#update years for "start" and "end" plus file entry
-datamart_output(start = start, end = end, 
+
+datamart_output(start = "2018", end = "2043", 
                 pop_name = "NHS Board Current Population Projections", 
-                file = "HB2019_pop_proj_2022_2047.rds", 
+                file = "HB2019_pop_proj_2018_2043.rds", 
                 file_name = "HBCURRENT_PROJECTIONS", 
-                template = "Template_HBcurrent_projections.rds", 
-                geography = "hb2019")
+                template = "Template_HBcurrent_projections.rds")

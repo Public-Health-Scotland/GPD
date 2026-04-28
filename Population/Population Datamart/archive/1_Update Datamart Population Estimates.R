@@ -2,46 +2,35 @@
 # Update Datamart Population Estimates
 # Calum Purdie
 # Original date 24/10/2019
-# Latest update author - Gerald Leung
-# Latest update date - 01/04/2024
+# Latest update author - Calum Purdie
+# Latest update date - 04/05/2020
 # Latest update description - formatting code
 # Type of script - Update
 # Written/run on RStudio Desktop
-# Version of R that the script was most recently run on - 4.0.2
+# Version of R that the script was most recently run on - 3.5.1
 # Code for updating population estimates in the Populations Datamart
 # Approximate run time - 10 seconds
 ##########################################################
 
 ### 1 - Information ----
 
-rm(list = ls())
-
-if(is.na(utils::packageDate("pacman"))) install.packages("pacman")
-if (!pacman::p_isinstalled("friendlyloader")){pacman::p_install_gh("RosalynLP/friendlyloader")}
-
-pacman::p_load( magrittr,tidyr,dplyr, tidylog,readr, glue, here, xfun)
-
-
-# set Estimate start & end dates 
-start <- "2023" #update
-end <- "2024" #update
-
+library(magrittr)
+library(tidyr)
+library(dplyr)
+library(tidylog)
+library(readr)
+library(glue)
+library(here)
+library(xfun)
 
 # Set filepaths
 
-#base_filepath <- glue("/data/geography", 
-#                "/Population/Population Estimates") # if on Posit
-
-
-
-base_filepath <- glue("/data/geography", "/Population/Population Estimates")
-
-lookups_filepath <- glue("{base_filepath}/",  "Lookup Files/R Files")
-
-templates_filepath <- glue("/data/geography/","GitHub/GPD-Population/Population Datamart/", 
-                           "R Templates")
-
-datamart_filepath <- glue("/data/geography/Population/Population Datamart/Lookup Files/", 
+base_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
+                      "2_Population")
+lookups_filepath <- glue("{base_filepath}/Population Estimates/Lookup Files/", 
+                         "R Files")
+templates_filepath <- here::here("Population/Population Datamart/R Templates")
+datamart_filepath <- glue("{base_filepath}/Population Datamart/Lookup Files/", 
                           "Other Geographies")
 
 # Set date for filenames
@@ -51,14 +40,7 @@ date <- strftime(Sys.Date(), format = "%Y%m%d")
 
 ### 2 - Create Function for Outputs ----
 
-datamart_output <- function(start, # estimates year start, generally only start & end need updating
-                            end, # estimates year end
-                            pop_name, # variable in Output Data tables that identifies the geography
-                            file, # name of "cl-out" source file
-                            file_name, # what you wish the output file to start with
-                            template, # template file used
-                            geography # identifies correct code to add as a variable in Output Data table
-                            ){
+datamart_output <- function(start, end, pop_name, file, file_name, template){
   
   for (i in start:end){
     
@@ -83,7 +65,7 @@ datamart_output <- function(start, # estimates year start, generally only start 
     if(file_name == "CA_ESTIMATES"){
       
       data %<>% 
-        rename(Council_Area_9 = !!as.name(geography)) %>% 
+        rename(Council_Area_9 = ca2011) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                NHS_Board_Code_9 = "",
@@ -92,7 +74,7 @@ datamart_output <- function(start, # estimates year start, generally only start 
     } else if(file_name == "HSCP_ESTIMATES"){
       
       data %<>% 
-        rename(HSCP_Code = !!as.name(geography)) %>% 
+        rename(HSCP_Code = hscp2016) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                NHS_Board_Code_9 = "",
@@ -103,7 +85,7 @@ datamart_output <- function(start, # estimates year start, generally only start 
                file_name == "HBEVENTv2_ESTIMATES"){
       
       data %<>% 
-        rename(NHS_Board_Code_9 = !!as.name(geography)) %>% 
+        rename(NHS_Board_Code_9 = hb2014) %>% 
         mutate(Data_Zone = "", 
                Intermediate_Zone = "", 
                Council_Area_9 = "",
@@ -174,51 +156,47 @@ datamart_output <- function(start, # estimates year start, generally only start 
 
 
 ### 3 - Council Area ----
-#Read the SOP
-#	This script contains a function to create the correct output for each geography. 
-#Within each section there is code to run this function for CA, HSCP or HB level. 
-#You should only need to update the file used and start/end years (at start or 
-# for each function), everything else  should remain unchanged. 
 
-datamart_output(start = start, end = end, 
+datamart_output(start = "2019", end = "2019", 
                 pop_name = "Council Area Population Estimates", 
-                file = "CA2019_pop_est_1981_2024.rds", 
+                file = "CA2019_pop_est_1981_2019.rds", 
                 file_name = "CA_ESTIMATES", 
-                template = "Template_CA_estimates.rds", 
-                geography = "ca2019")
+                template = "Template_CA_estimates.rds")
+
+
 
 ### 4 - HSCP ----
-datamart_output(start = start, end = end, 
+
+datamart_output(start = "2019", end = "2019", 
                 pop_name = "Health and Social Care Partnership Population Estimates", 
-                file = "HSCP2019_pop_est_1981_2024.rds", 
+                file = "HSCP2019_pop_est_1981_2019.rds", 
                 file_name = "HSCP_ESTIMATES", 
-                template = "Template_HSCP_estimates.rds", 
-                geography = "hscp2019")
+                template = "Template_HSCP_estimates.rds")
+
 
 
 ### 5 - Health Board ----
+
 ### 5.1 - HBCURRENT ----
-datamart_output(start = start, end = end,
+
+datamart_output(start = "2019", end = "2019", 
                 pop_name = "NHS Board Current Population Estimates", 
-                file = "HB2019_pop_est_1981_2024.rds", 
+                file = "HB2019_pop_est_1981_2019.rds", 
                 file_name = "HBCURRENT_ESTIMATES", 
-                template = "Template_HBcurrent_estimates.rds", 
-                geography = "hb2019")
+                template = "Template_HBcurrent_estimates.rds")
 
 ### 5.2 - HBEVENT ----
 
-datamart_output(start = start, end = end,
+datamart_output(start = "2019", end = "2019", 
                 pop_name = "NHS Board At Event Population Estimates", 
-                file = "HB2019_pop_est_1981_2024.rds", 
+                file = "HB2019_pop_est_1981_2019.rds", 
                 file_name = "HBEVENT_ESTIMATES", 
-                template = "Template_HBevent_estimates.rds", 
-                geography = "hb2019")
+                template = "Template_HBevent_estimates.rds")
 
 ### 5.3 - HBEVENTv2 ----
 
-datamart_output(start = start, end = end,
+datamart_output(start = "2019", end = "2019", 
                 pop_name = "NHS Board At Event (excluding Argyll & Clyde) Population Estimates", 
-                file = "HB2019_pop_est_1981_2024.rds", 
+                file = "HB2019_pop_est_1981_2019.rds", 
                 file_name = "HBEVENTv2_ESTIMATES", 
-                template = "Template_HB2014eventv2_estimates.rds", 
-                geography = "hb2019")
+                template = "Template_HB2014eventv2_estimates.rds")

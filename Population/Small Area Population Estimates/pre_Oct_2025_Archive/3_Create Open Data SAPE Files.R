@@ -27,14 +27,12 @@ library(glue)
 
 # Set filepaths
 
-# lookup_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
-#                         "/2_Population/Small Area Population estimates/", 
-#                         "Lookup Files/R Files")
-lookup_filepath <- glue("//data/geography/Population/Small Area Population estimates/Lookup Files/R Files")
-od_filepath     <- glue("//data/geography/Population/Small Area Population estimates/Lookup Files/CKAN Open Data")
-# od_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Publications/", 
-#                     "Open Data (Non Health Topic)/Data/", 
-#                     "OD1700007 - Population Estimates")
+lookup_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Referencing & Standards/GPD/", 
+                        "/2_Population/Small Area Population estimates/", 
+                        "Lookup Files/R Files")
+od_filepath <- glue("//Freddy/DEPT/PHIBCS/PHI/Publications/", 
+                    "Open Data (Non Health Topic)/Data/", 
+                    "OD1700007 - Population Estimates")
 
 # Set date for open data filenames
 
@@ -42,14 +40,14 @@ date <- strftime(Sys.Date(), format = "%d%m%Y")
 
 # Set new year
 
-year <- 2022
+year <- 2019
 
 # Set datasets to use
 
-new_dz_estimates       <- glue("DataZone2011_pop_est_2011_{year}")
-new_dz_estimates_5y    <- glue("DataZone2011_pop_est_5year_agegroups_2011_{year}")
-new_iz_estimates       <- glue("IntZone2011_pop_est_2011_{year}")
-new_iz_estimates_5y    <- glue("IntZone2011_pop_est_5year_agegroups_2011_{year}")
+new_dz_estimates <- glue("DataZone2011_pop_est_2011_{year}")
+new_dz_estimates_5y <- glue("DataZone2011_pop_est_5year_agegroups_2011_{year}")
+new_iz_estimates <- glue("IntZone2011_pop_est_2011_{year}")
+new_iz_estimates_5y <- glue("IntZone2011_pop_est_5year_agegroups_2011_{year}")
 dz_estimates_2001_2010 <- "DataZone2011_pop_est_2001_2010"
 iz_estimates_2001_2010 <- "IntZone2011_pop_est_2001_2010"
 
