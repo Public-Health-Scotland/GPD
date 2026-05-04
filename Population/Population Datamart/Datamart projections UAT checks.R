@@ -29,9 +29,8 @@ pacman::p_load(phsmethods,
 
 
 # set projection start & end dates 
-start <- "2022" #update
-end <- "2047" #update
-
+start <- "2024" #update
+end <- "2049" #update
 
 test_year <- "2030" # update
 geography <- "SCOTLAND" # update scotland hb? ca? hscp?
@@ -77,12 +76,12 @@ source_total_pop= source_data %>%
   group_by(year) %>% 
   summarise(source_pop= sum(pop)) 
 
-source_sex_pop= scot_source %>% 
+source_sex_pop= source_data %>% 
   filter(year==test_year) %>% 
   group_by(gender=sex) %>% 
   summarise(source_sex_pop= sum(pop))
 
-source_age_pop= scot_source %>% 
+source_age_pop= source_data %>% 
   filter(year==test_year) %>% 
   group_by(age_band=age) %>% 
   summarise(source_age_pop= sum(pop))
