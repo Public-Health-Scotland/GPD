@@ -35,8 +35,8 @@ od_filepath <- glue("/data/geography/Population/Population Projections/Lookup Fi
 
 date <- strftime(Sys.Date(), format = "%d%m%Y")
 
-start <- "2022"
-end <- "2047"
+start <- "2024"
+end <- "2049"
 
 ### 2 Create function to read in population data and restructure ----
 source("Pop_proj_OD_functions.R")
